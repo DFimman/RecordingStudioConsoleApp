@@ -1,5 +1,6 @@
 package com.joysistvi.recordingapp.view;
 
+import com.joysistvi.recordingapp.model.Album;
 import com.joysistvi.recordingapp.model.Artist;
 import com.joysistvi.recordingapp.service.ArtistService;
 
@@ -17,40 +18,14 @@ public class ArtistView {
     }
 
     public void displayAllArtist() {
-        boolean isArchived = false;
-        List<Artist> artists = isArchived ? artistService.getAllArchivedArtists() : artistService.getAllActiveArtists();
-
-        System.out.println("\n----- Artists -----");
-        System.out.printf("%-4s| %-20s%n", "ID", "Artist Name");
-
-        if (artists == null || artists.isEmpty()){
-            System.out.println("");
-            return;
-        }
-
-        for (Artist artist : artists) {
-            System.out.printf("%-4d| %-20s%n",
-                    artist.getId(),
-                    artist.getName());
-        }
+        displayAllArtist(false);
     }
 
     public void displayAllArtist(boolean isArchived) {
         List<Artist> artists = isArchived ? artistService.getAllArchivedArtists() : artistService.getAllActiveArtists();
 
-        System.out.println("\n----- Artists -----");
-        System.out.printf("%-4s| %-20s%n", "ID", "Artist Name");
-
-        if (artists == null || artists.isEmpty()){
-            System.out.println("");
-            return;
-        }
-
-        for (Artist artist : artists) {
-            System.out.printf("%-4d| %-20s%n",
-                    artist.getId(),
-                    artist.getName());
-        }
+        String title = isArchived ? "Archived Artists" : "Artists";
+        printArtists(artists, title);
     }
 
     public void promptCreateArtist() {
@@ -138,6 +113,22 @@ public class ArtistView {
 
         if (artists == null || artists.isEmpty()){
             System.out.println("");
+            return;
+        }
+
+        for (Artist artist : artists) {
+            System.out.printf("%-4d| %-20s%n",
+                    artist.getId(),
+                    artist.getName());
+        }
+    }
+
+    private void printArtists(List<Artist> artists, String title) {
+        System.out.println("\n----- " + title + " -----");
+        System.out.printf("%-4s| %-20s%n", "ID", "Artist Name");
+
+        if (artists == null || artists.isEmpty()) {
+            System.out.println("No Artist found.");
             return;
         }
 
