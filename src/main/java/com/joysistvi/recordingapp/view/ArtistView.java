@@ -103,23 +103,24 @@ public class ArtistView {
     }
 
     public void promptSearchArtist(){
-        System.out.println("\n----- Search Artists -----");
+        System.out.println("\n----- Restore Artist -----");
 
-        System.out.print("Enter Keyword (search): ");
-        String keyword = scanner.nextLine().trim();
+        List<Artist> archivedArtists = artistService.getAllArchivedArtists();
+        printArtists(archivedArtists, "Archived Artists");
 
-        List<Artist> artists = artistService.searchArtists(keyword);
-        System.out.printf("%-4s| %-20s%n", "ID", "Artist Name");
-
-        if (artists == null || artists.isEmpty()){
-            System.out.println("");
+        if (archivedArtists == null || archivedArtists.isEmpty()) {
             return;
         }
 
-        for (Artist artist : artists) {
-            System.out.printf("%-4d| %-20s%n",
-                    artist.getId(),
-                    artist.getName());
+        System.out.print("Enter artist id: ");
+        int id = scanner.nextInt();
+
+        boolean restored = artistService.restoreArtist(id);
+
+        if (restored) {
+            System.out.println("\nArtist ID " + id + " restored successfully!");
+        } else {
+            System.out.println("\nNo artist found with ID " + id + ".");
         }
     }
 

@@ -2,6 +2,7 @@ package com.joysistvi.recordingapp.service;
 import com.joysistvi.recordingapp.model.Artist;
 import com.joysistvi.recordingapp.repository.ArtistRepository;
 
+import java.util.Collections;
 import java.util.List;
 
 // Application Tier: Business Rule / Validation
@@ -83,6 +84,7 @@ public class ArtistServiceImpl implements ArtistService{
     public List<Artist> searchArtists(String keyword){
         if (keyword == null || keyword.trim().isEmpty()) {
             System.out.println("\nValidation Error: Search keyword is required.");
+            return Collections.emptyList();
         }
 
         return artistRepository.searchByName(keyword);
