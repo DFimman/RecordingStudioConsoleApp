@@ -8,5 +8,12 @@ import java.util.List;
 public interface ArtistRepository {
 
     public List<Artist> findAllActive();
+    public List<Artist> findAllArchived();
+    public boolean save(Artist artists);
+    public boolean update(Artist artists);
+    public boolean deleteById(int id);
+    public boolean archiveById(int id);
+    public boolean restoreById(int id);
+    public List<Artist> searchByName(String name);
 
 }
