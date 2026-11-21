@@ -5,6 +5,7 @@ import com.joysistvi.recordingapp.model.Artist;
 import com.joysistvi.recordingapp.service.ArtistService;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 public class ArtistView {
@@ -30,8 +31,10 @@ public class ArtistView {
 
     public void promptCreateArtist() {
         System.out.println("\n----- Create New Artist -----");
-        System.out.print("Enter artist name: ");
-        String name = scanner.nextLine();
+        String name = getStringInput("Enter artist name: ");
+        if (name == null) {
+            return;
+        }
 
         boolean created = artistService.createArtist(name);
 
@@ -44,10 +47,14 @@ public class ArtistView {
 
     public void promptUpdateArtist(){
         System.out.println("\n----- Update Artist -----");
-        System.out.print("Enter artist id: ");
-        int id = scanner.nextInt();
-        System.out.print("Enter new artist name: ");
-        String name = scanner.next();
+        Integer id = getIntInput("Enter artist id: ");
+        if (id == null) {
+            return;
+        }
+        String name = getStringInput("Enter new artist name: ");
+        if (name == null) {
+            return;
+        }
 
         boolean updated = artistService.updateArtist(id, name);
 
@@ -60,8 +67,10 @@ public class ArtistView {
 
     public void promptDeleteArtist(){
         System.out.println("\n----- Delete Artist -----");
-        System.out.print("Enter artist id: ");
-        int id = scanner.nextInt();
+        Integer id = getIntInput("Enter artist id: ");
+        if (id == null) {
+            return;
+        }
 
         boolean deleted = artistService.deleteArtist(id);
 
@@ -74,8 +83,10 @@ public class ArtistView {
 
     public void promptArchiveArtist(){
         System.out.println("\n----- Archive Artist -----");
-        System.out.print("Enter artist id: ");
-        int id = scanner.nextInt();
+        Integer id = getIntInput("Enter artist id: ");
+        if (id == null) {
+            return;
+        }
 
         boolean archived = artistService.archiveArtist(id);
 
@@ -96,9 +107,10 @@ public class ArtistView {
             return;
         }
 
-        System.out.print("Enter artist id: ");
-        int id = scanner.nextInt();
-        scanner.nextLine();
+        Integer id = getIntInput("Enter artist id: ");
+        if (id == null) {
+            return;
+        }
 
         boolean restored = artistService.restoreArtist(id);
 
@@ -112,11 +124,56 @@ public class ArtistView {
     public void promptSearchArtist(){
         System.out.println("\n----- Search Artists -----");
 
-        System.out.print("Enter Keyword (search): ");
-        String keyword = scanner.nextLine();
+        String keyword = getStringInput("Enter Keyword (search): ");
+        if (keyword == null) {
+            return;
+        }
 
         List<Artist> artists = artistService.searchArtists(keyword);
         printArtists(artists, "Search Artists");
+    }
+
+    // Get non-blank string input
+    private String getStringInput(String prompt) {
+        while (true) {
+            System.out.print(prompt);
+
+            try {
+                String input = scanner.nextLine();
+
+                if (input.trim().isEmpty()) {
+                    System.out.println("\nValidation Error: Input cannot be blank.");
+                    continue;
+                }
+
+                return input;
+            } catch (NoSuchElementException | IllegalStateException e) {
+                System.out.println("\nInput Error: Unable to read input. Operation cancelled.");
+                return null;
+            }
+        }
+    }
+
+    // Get a valid positive integer
+    private Integer getIntInput(String prompt) {
+        while (true) {
+            String input = getStringInput(prompt);
+            if (input == null) {
+                return null;
+            }
+
+            try {
+                int number = Integer.parseInt(input.trim());
+                if (number <= 0) {
+                    System.out.println("\nValidation Error: Please enter a positive number.");
+                    continue;
+                }
+
+                return number;
+            } catch (NumberFormatException e) {
+                System.out.println("\nValidation Error: Please enter a valid whole number.");
+            }
+        }
     }
 
     private void printArtists(List<Artist> artists, String title) {
@@ -135,4 +192,3 @@ public class ArtistView {
         }
     }
 }
-

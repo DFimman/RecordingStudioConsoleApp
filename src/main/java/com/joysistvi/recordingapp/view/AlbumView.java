@@ -4,6 +4,7 @@ import com.joysistvi.recordingapp.model.Album;
 import com.joysistvi.recordingapp.service.AlbumService;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 public class AlbumView {
@@ -27,14 +28,19 @@ public class AlbumView {
 
     public void promptCreateAlbum() {
         System.out.println("\n----- Create New Album -----");
-        System.out.print("Enter album name: ");
-        String name = scanner.nextLine();
+        String name = getStringInput("Enter album name: ");
+        if (name == null) {
+            return;
+        }
 
-        System.out.print("Enter release year: ");
-        int year = scanner.nextInt();
-        System.out.print("Enter artist id: ");
-        int artistId = scanner.nextInt();
-        scanner.nextLine();
+        Integer year = getIntInput("Enter release year: ");
+        if (year == null) {
+            return;
+        }
+        Integer artistId = getIntInput("Enter artist id: ");
+        if (artistId == null) {
+            return;
+        }
 
         boolean created = albumService.createAlbum(name, year, artistId);
 
@@ -47,18 +53,24 @@ public class AlbumView {
 
     public void promptUpdateAlbum() {
         System.out.println("\n----- Update Album -----");
-        System.out.print("Enter album id: ");
-        int id = scanner.nextInt();
-        scanner.nextLine();
+        Integer id = getIntInput("Enter album id: ");
+        if (id == null) {
+            return;
+        }
 
-        System.out.print("Enter new album name: ");
-        String name = scanner.nextLine();
+        String name = getStringInput("Enter new album name: ");
+        if (name == null) {
+            return;
+        }
 
-        System.out.print("Enter new release year: ");
-        int year = scanner.nextInt();
-        System.out.print("Enter new artist id: ");
-        int artistId = scanner.nextInt();
-        scanner.nextLine();
+        Integer year = getIntInput("Enter new release year: ");
+        if (year == null) {
+            return;
+        }
+        Integer artistId = getIntInput("Enter new artist id: ");
+        if (artistId == null) {
+            return;
+        }
 
         boolean updated = albumService.updateAlbum(id, name, year, artistId);
 
@@ -71,9 +83,10 @@ public class AlbumView {
 
     public void promptDeleteAlbum() {
         System.out.println("\n----- Delete Album -----");
-        System.out.print("Enter album id: ");
-        int id = scanner.nextInt();
-        scanner.nextLine();
+        Integer id = getIntInput("Enter album id: ");
+        if (id == null) {
+            return;
+        }
 
         boolean deleted = albumService.deleteAlbum(id);
 
@@ -86,9 +99,10 @@ public class AlbumView {
 
     public void promptArchiveAlbum() {
         System.out.println("\n----- Archive Album -----");
-        System.out.print("Enter album id: ");
-        int id = scanner.nextInt();
-        scanner.nextLine();
+        Integer id = getIntInput("Enter album id: ");
+        if (id == null) {
+            return;
+        }
 
         boolean archived = albumService.archiveAlbum(id);
 
@@ -108,9 +122,10 @@ public class AlbumView {
             return;
         }
 
-        System.out.print("Enter album id to restore: ");
-        int id = scanner.nextInt();
-        scanner.nextLine();
+        Integer id = getIntInput("Enter album id to restore: ");
+        if (id == null) {
+            return;
+        }
 
         boolean restored = albumService.restoreAlbum(id);
 
@@ -123,11 +138,56 @@ public class AlbumView {
 
     public void promptSearchAlbums() {
         System.out.println("\n----- Search Albums -----");
-        System.out.print("Enter keyword (search): ");
-        String keyword = scanner.nextLine();
+        String keyword = getStringInput("Enter keyword (search): ");
+        if (keyword == null) {
+            return;
+        }
 
         List<Album> albums = albumService.searchAlbums(keyword);
         printAlbums(albums, "Search Albums");
+    }
+
+    // Get non-blank string input
+    private String getStringInput(String prompt) {
+        while (true) {
+            System.out.print(prompt);
+
+            try {
+                String input = scanner.nextLine();
+
+                if (input.trim().isEmpty()) {
+                    System.out.println("\nValidation Error: Input cannot be blank.");
+                    continue;
+                }
+
+                return input;
+            } catch (NoSuchElementException | IllegalStateException e) {
+                System.out.println("\nInput Error: Unable to read input. Operation cancelled.");
+                return null;
+            }
+        }
+    }
+
+    // Get a valid positive integer
+    private Integer getIntInput(String prompt) {
+        while (true) {
+            String input = getStringInput(prompt);
+            if (input == null) {
+                return null;
+            }
+
+            try {
+                int number = Integer.parseInt(input.trim());
+                if (number <= 0) {
+                    System.out.println("\nValidation Error: Please enter a positive number.");
+                    continue;
+                }
+
+                return number;
+            } catch (NumberFormatException e) {
+                System.out.println("\nValidation Error: Please enter a valid whole number.");
+            }
+        }
     }
 
     private void printAlbums(List<Album> albums, String title) {

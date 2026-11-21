@@ -4,6 +4,7 @@ import com.joysistvi.recordingapp.model.User;
 import com.joysistvi.recordingapp.service.UserService;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 public class UserView {
@@ -29,12 +30,18 @@ public class UserView {
 
     public void promptCreateUser() {
         System.out.println("\n----- Create New User -----");
-        System.out.print("Enter username: ");
-        String username = scanner.nextLine();
-        System.out.print("Enter password: ");
-        String password = scanner.nextLine();
-        System.out.print("Enter email: ");
-        String email = scanner.nextLine();
+        String username = getStringInput("Enter username: ");
+        if (username == null) {
+            return;
+        }
+        String password = getStringInput("Enter password: ");
+        if (password == null) {
+            return;
+        }
+        String email = getStringInput("Enter email: ");
+        if (email == null) {
+            return;
+        }
 
         boolean created = userService.createUser(username, password, email);
 
@@ -47,14 +54,19 @@ public class UserView {
 
     public void promptUpdateUser() {
         System.out.println("\n----- Update User -----");
-        System.out.print("Enter user id: ");
-        int id = scanner.nextInt();
-        scanner.nextLine();
+        Integer id = getIntInput("Enter user id: ");
+        if (id == null) {
+            return;
+        }
 
-        System.out.print("Enter new username: ");
-        String username = scanner.nextLine();
-        System.out.print("Enter new email: ");
-        String email = scanner.nextLine();
+        String username = getStringInput("Enter new username: ");
+        if (username == null) {
+            return;
+        }
+        String email = getStringInput("Enter new email: ");
+        if (email == null) {
+            return;
+        }
 
         boolean updated = userService.updateUser(id, username, email);
 
@@ -67,9 +79,10 @@ public class UserView {
 
     public void promptDeleteUser() {
         System.out.println("\n----- Delete User -----");
-        System.out.print("Enter user id: ");
-        int id = scanner.nextInt();
-        scanner.nextLine();
+        Integer id = getIntInput("Enter user id: ");
+        if (id == null) {
+            return;
+        }
 
         boolean deleted = userService.deleteUser(id);
 
@@ -82,9 +95,10 @@ public class UserView {
 
     public void promptArchiveUser() {
         System.out.println("\n----- Archive User -----");
-        System.out.print("Enter user id: ");
-        int id = scanner.nextInt();
-        scanner.nextLine();
+        Integer id = getIntInput("Enter user id: ");
+        if (id == null) {
+            return;
+        }
 
         boolean archived = userService.archiveUser(id);
 
@@ -104,9 +118,10 @@ public class UserView {
             return;
         }
 
-        System.out.print("Enter user id: ");
-        int id = scanner.nextInt();
-        scanner.nextLine();
+        Integer id = getIntInput("Enter user id: ");
+        if (id == null) {
+            return;
+        }
 
         boolean restored = userService.restoreUser(id);
 
@@ -119,8 +134,10 @@ public class UserView {
 
     public void promptSearchUsers() {
         System.out.println("\n----- Search Users -----");
-        System.out.print("Enter keyword (search): ");
-        String keyword = scanner.nextLine();
+        String keyword = getStringInput("Enter keyword (search): ");
+        if (keyword == null) {
+            return;
+        }
 
         List<User> users = userService.searchUsers(keyword);
         printUsers(users, "Search Users");
@@ -128,10 +145,14 @@ public class UserView {
 
     public void promptLoginUser() {
         System.out.println("\n----- Login User -----");
-        System.out.print("Enter username: ");
-        String username = scanner.nextLine();
-        System.out.print("Enter password: ");
-        String password = scanner.nextLine();
+        String username = getStringInput("Enter username: ");
+        if (username == null) {
+            return;
+        }
+        String password = getStringInput("Enter password: ");
+        if (password == null) {
+            return;
+        }
 
         boolean loggedIn = userService.loginUser(username, password);
 
@@ -139,6 +160,49 @@ public class UserView {
             System.out.println("\nLogin successful! Welcome, " + username.trim() + "!");
         } else {
             System.out.println("\nLogin failed: Invalid username or password.");
+        }
+    }
+
+    // Get non-blank string input
+    private String getStringInput(String prompt) {
+        while (true) {
+            System.out.print(prompt);
+
+            try {
+                String input = scanner.nextLine();
+
+                if (input.trim().isEmpty()) {
+                    System.out.println("\nValidation Error: Input cannot be blank.");
+                    continue;
+                }
+
+                return input;
+            } catch (NoSuchElementException | IllegalStateException e) {
+                System.out.println("\nInput Error: Unable to read input. Operation cancelled.");
+                return null;
+            }
+        }
+    }
+
+    // Get a valid positive integer
+    private Integer getIntInput(String prompt) {
+        while (true) {
+            String input = getStringInput(prompt);
+            if (input == null) {
+                return null;
+            }
+
+            try {
+                int number = Integer.parseInt(input.trim());
+                if (number <= 0) {
+                    System.out.println("\nValidation Error: Please enter a positive number.");
+                    continue;
+                }
+
+                return number;
+            } catch (NumberFormatException e) {
+                System.out.println("\nValidation Error: Please enter a valid whole number.");
+            }
         }
     }
 
