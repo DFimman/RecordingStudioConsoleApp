@@ -5,26 +5,54 @@ import com.joysistvi.recordingapp.repository.ArtistRepository;
 import com.joysistvi.recordingapp.repository.ArtistRepositoryImpl;
 import com.joysistvi.recordingapp.repository.AlbumRepository;
 import com.joysistvi.recordingapp.repository.AlbumRepositoryImpl;
+import com.joysistvi.recordingapp.repository.SongRepository;
+import com.joysistvi.recordingapp.repository.SongRepositoryImpl;
 import com.joysistvi.recordingapp.repository.UserRepository;
 import com.joysistvi.recordingapp.repository.UserRepositoryImpl;
 import com.joysistvi.recordingapp.service.ArtistService;
 import com.joysistvi.recordingapp.service.ArtistServiceImpl;
 import com.joysistvi.recordingapp.service.AlbumService;
 import com.joysistvi.recordingapp.service.AlbumServiceImpl;
+import com.joysistvi.recordingapp.service.SongService;
+import com.joysistvi.recordingapp.service.SongServiceImpl;
 import com.joysistvi.recordingapp.service.UserService;
 import com.joysistvi.recordingapp.service.UserServiceImpl;
 import com.joysistvi.recordingapp.view.ArtistView;
 import com.joysistvi.recordingapp.view.AlbumView;
+import com.joysistvi.recordingapp.view.SongView;
 import com.joysistvi.recordingapp.view.UserView;
 
-
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 public class App {
 
+    private final Scanner scanner;
+    private final UserService userService;
+    private final SongView songView;
+    private final ArtistView artistView;
+    private final AlbumView albumView;
+    private final UserView userView;
+    private String currentUser;
+
+    public App(Scanner scanner, UserService userService, SongView songView,
+               ArtistView artistView, AlbumView albumView, UserView userView) {
+        this.scanner = scanner;
+        this.userService = userService;
+        this.songView = songView;
+        this.artistView = artistView;
+        this.albumView = albumView;
+        this.userView = userView;
+    }
+
     public static void main(String[] args) {
         DbConnection dbConnection = new DbConnection();
         Scanner scanner = new Scanner(System.in);
+
+        // SONG
+        SongRepository songRepository = new SongRepositoryImpl(dbConnection);
+        SongService songService = new SongServiceImpl(songRepository);
+        SongView songView = new SongView(songService, scanner);
 
         // ARTIST
         ArtistRepository artistRepository = new ArtistRepositoryImpl(dbConnection);
@@ -41,40 +69,120 @@ public class App {
         UserService userService = new UserServiceImpl(userRepository);
         UserView userView = new UserView(userService, scanner);
 
-        // ARTIST METHODS TEST
-//        artistView.displayAllArtist();
-//        artistView.promptCreateArtist();
-//        artistView.promptUpdateArtist();
-//        artistView.promptDeleteArtist();
-//        artistView.promptArchiveArtist();
-//        artistView.promptRestoreArtist();
-//        artistView.promptSearchArtist();
+        App app = new App(scanner, userService, songView, artistView, albumView, userView);
+        app.run();
+    }
 
-        // ALBUM METHODS TEST
-//        albumView.displayAllAlbums();
-//        albumView.promptCreateAlbum();
-//        albumView.promptUpdateAlbum();
-//        albumView.promptDeleteAlbum();
-//        albumView.promptArchiveAlbum();
-//        albumView.promptRestoreAlbum();
-//        albumView.promptSearchAlbums();
+    public void run() {
+        while (true) {
+            showAuthMenuAndAuthenticate();
 
-        // USER METHODS TEST
-//        userView.displayAllUsers();
-//        userView.promptCreateUser();
-//        userView.promptUpdateUser();
-//        userView.promptDeleteUser();
-//        userView.promptArchiveUser();
-//        userView.promptRestoreUser();
-//        userView.promptSearchUsers();
-//        userView.promptLoginUser();
+            if (currentUser == null) {
+                return;
+            }
 
-        // VALIDATION TESTS
-//        artistService.createArtist("   ");
-//        albumService.createAlbum("", 2020, 1);
-//        albumService.createAlbum("Sample", 1800, 1);
-//        userService.createUser("", "password123", "user@example.com");
-//        userService.createUser("sample", "123", "user@example.com");
-//        userService.createUser("sample", "password123", "invalid-email");
+            dashboard();
+            currentUser = null;
+            System.out.println("\nLogged out successfully!");
+        }
+    }
+
+    // Authentication Menu
+    private void showAuthMenuAndAuthenticate() {
+        while (true) {
+            System.out.println("\n=== RECORDING STUDIO APP ===");
+            System.out.println("1. Login");
+            System.out.println("2. Register User");
+            System.out.println("0. Exit");
+
+            Integer choice = promptForInt("Choose an option: ");
+            if (choice == null) {
+                return;
+            }
+
+            switch (choice) {
+                case 1 -> {
+                    String username = getStringInput("Enter username: ");
+                    if (username == null) {
+                        return;
+                    }
+
+                    String password = getStringInput("Enter password: ");
+                    if (password == null) {
+                        return;
+                    }
+
+                    boolean loggedIn = userService.loginUser(username, password);
+
+                    if (loggedIn) {
+                        currentUser = username.trim();
+                        System.out.println("\nLogin successful! Welcome, " + currentUser + "!");
+                        return;
+                    } else {
+                        System.out.println("\nLogin failed: Invalid username or password.");
+                    }
+                }
+                case 2 -> userView.promptCreateUser();
+                case 0 -> {
+                    return;
+                }
+                default -> System.out.println("Invalid option. Please try again.");
+            }
+        }
+    }
+
+    // Main Dashboard
+    private void dashboard() {
+        while (true) {
+            System.out.println("\n1. Song Management");
+            System.out.println("2. Artist Management");
+            System.out.println("3. Album Management");
+            System.out.println("4. Users Management");
+            System.out.println("0. Back");
+
+            Integer choice = promptForInt("Choice: ");
+            if (choice == null) {
+                return;
+            }
+
+            switch (choice) {
+                case 1 -> songView.handleMenu();
+                case 2 -> artistView.handleMenu();
+                case 3 -> albumView.handleMenu();
+                case 4 -> userView.handleMenu();
+                case 0 -> {
+                    return;
+                }
+                default -> System.out.println("Invalid choice. Please try again.");
+            }
+        }
+    }
+
+    // Get console input
+    private String getStringInput(String prompt) {
+        System.out.print(prompt);
+
+        try {
+            return scanner.nextLine();
+        } catch (NoSuchElementException | IllegalStateException e) {
+            System.out.println("\nInput Error: Unable to read input. Operation cancelled.");
+            return null;
+        }
+    }
+
+    // Get a valid menu option (0 = Back)
+    private Integer promptForInt(String prompt) {
+        while (true) {
+            String input = getStringInput(prompt);
+            if (input == null) {
+                return null;
+            }
+
+            try {
+                return Integer.parseInt(input.trim());
+            } catch (NumberFormatException e) {
+                System.out.println("\nValidation Error: Please enter a valid whole number.");
+            }
+        }
     }
 }
