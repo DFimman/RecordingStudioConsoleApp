@@ -35,8 +35,7 @@ public class AlbumRepositoryImpl implements AlbumRepository {
                             resultSet.getString("name"),
                             resultSet.getInt("year"),
                             resultSet.getInt("artist_id"),
-                            resultSet.getString("artist_name"),
-                            resultSet.getBoolean("is_archived"));
+                            resultSet.getString("artist_name"));
                 }
             }
         } catch (SQLException e) {
@@ -67,7 +66,7 @@ public class AlbumRepositoryImpl implements AlbumRepository {
                 String artistName = resultSet.getString("artist_name");
                 boolean archived = resultSet.getBoolean("is_archived");
 
-                albums.add(new Album(id, name, year, artistId, artistName, archived));
+                albums.add(new Album(id, name, year, artistId, artistName));
             }
 
         } catch (SQLException e) {
@@ -99,7 +98,7 @@ public class AlbumRepositoryImpl implements AlbumRepository {
                 String artistName = resultSet.getString("artist_name");
                 boolean archived = resultSet.getBoolean("is_archived");
 
-                albums.add(new Album(id, name, year, artistId, artistName, archived));
+                albums.add(new Album(id, name, year, artistId, artistName));
             }
 
         } catch (SQLException e) {
@@ -230,7 +229,7 @@ public class AlbumRepositoryImpl implements AlbumRepository {
                     String artistName = resultSet.getString("artist_name");
                     boolean archived = resultSet.getBoolean("is_archived");
 
-                    albums.add(new Album(id, name, year, artistId, artistName, archived));
+                    albums.add(new Album(id, name, year, artistId, artistName));
                 }
             }
 
