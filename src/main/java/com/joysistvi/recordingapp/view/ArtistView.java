@@ -18,6 +18,40 @@ public class ArtistView {
         this.scanner = scanner;
     }
 
+    // Artist Management Menu
+    public void handleMenu() {
+        while (true) {
+            System.out.println("\n=== MANAGE ARTISTS ===");
+            System.out.println("1. View All Artists");
+            System.out.println("2. Create Artist");
+            System.out.println("3. Update Artist");
+            System.out.println("4. Search Artist");
+            System.out.println("5. Archive Artist");
+            System.out.println("6. Restore Artist");
+            System.out.println("7. Delete Artist");
+            System.out.println("0. Back");
+
+            Integer choice = promptForInt("Choose an option: ");
+            if (choice == null) {
+                return;
+            }
+
+            switch (choice) {
+                case 1 -> displayAllArtist();
+                case 2 -> promptCreateArtist();
+                case 3 -> promptUpdateArtist();
+                case 4 -> promptSearchArtist();
+                case 5 -> promptArchiveArtist();
+                case 6 -> promptRestoreArtist();
+                case 7 -> promptDeleteArtist();
+                case 0 -> {
+                    return;
+                }
+                default -> System.out.println("Invalid option. Please try again.");
+            }
+        }
+    }
+
     public void displayAllArtist() {
         displayAllArtist(false);
     }
@@ -131,6 +165,22 @@ public class ArtistView {
 
         List<Artist> artists = artistService.searchArtists(keyword);
         printArtists(artists, "Search Artists");
+    }
+
+    // Get a valid menu option (0 = Back)
+    private Integer promptForInt(String prompt) {
+        while (true) {
+            String input = getStringInput(prompt);
+            if (input == null) {
+                return null;
+            }
+
+            try {
+                return Integer.parseInt(input.trim());
+            } catch (NumberFormatException e) {
+                System.out.println("\nValidation Error: Please enter a valid whole number.");
+            }
+        }
     }
 
     // Get non-blank string input

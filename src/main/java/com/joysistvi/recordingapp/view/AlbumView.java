@@ -17,6 +17,40 @@ public class AlbumView {
         this.scanner = scanner;
     }
 
+    // Album Management Menu
+    public void handleMenu() {
+        while (true) {
+            System.out.println("\n=== MANAGE ALBUMS ===");
+            System.out.println("1. View All Albums");
+            System.out.println("2. Create Album");
+            System.out.println("3. Update Album");
+            System.out.println("4. Search Album");
+            System.out.println("5. Archive Album");
+            System.out.println("6. Restore Album");
+            System.out.println("7. Delete Album");
+            System.out.println("0. Back");
+
+            Integer choice = promptForInt("Choose an option: ");
+            if (choice == null) {
+                return;
+            }
+
+            switch (choice) {
+                case 1 -> displayAllAlbums();
+                case 2 -> promptCreateAlbum();
+                case 3 -> promptUpdateAlbum();
+                case 4 -> promptSearchAlbums();
+                case 5 -> promptArchiveAlbum();
+                case 6 -> promptRestoreAlbum();
+                case 7 -> promptDeleteAlbum();
+                case 0 -> {
+                    return;
+                }
+                default -> System.out.println("Invalid option. Please try again.");
+            }
+        }
+    }
+
     public void displayAllAlbums() {
         displayAllAlbums(false);
     }
@@ -145,6 +179,22 @@ public class AlbumView {
 
         List<Album> albums = albumService.searchAlbums(keyword);
         printAlbums(albums, "Search Albums");
+    }
+
+    // Get a valid menu option (0 = Back)
+    private Integer promptForInt(String prompt) {
+        while (true) {
+            String input = getStringInput(prompt);
+            if (input == null) {
+                return null;
+            }
+
+            try {
+                return Integer.parseInt(input.trim());
+            } catch (NumberFormatException e) {
+                System.out.println("\nValidation Error: Please enter a valid whole number.");
+            }
+        }
     }
 
     // Get non-blank string input

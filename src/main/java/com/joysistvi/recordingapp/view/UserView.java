@@ -17,6 +17,40 @@ public class UserView {
         this.scanner = scanner;
     }
 
+    // User Management Menu
+    public void handleMenu() {
+        while (true) {
+            System.out.println("\n=== MANAGE USERS ===");
+            System.out.println("1. View All Users");
+            System.out.println("2. Create/Register User");
+            System.out.println("3. Update User");
+            System.out.println("4. Search User");
+            System.out.println("5. Archive User");
+            System.out.println("6. Restore User");
+            System.out.println("7. Delete User");
+            System.out.println("0. Back");
+
+            Integer choice = promptForInt("Choose an option: ");
+            if (choice == null) {
+                return;
+            }
+
+            switch (choice) {
+                case 1 -> displayAllUsers();
+                case 2 -> promptCreateUser();
+                case 3 -> promptUpdateUser();
+                case 4 -> promptSearchUsers();
+                case 5 -> promptArchiveUser();
+                case 6 -> promptRestoreUser();
+                case 7 -> promptDeleteUser();
+                case 0 -> {
+                    return;
+                }
+                default -> System.out.println("Invalid option. Please try again.");
+            }
+        }
+    }
+
     public void displayAllUsers() {
         displayAllUsers(false);
     }
@@ -160,6 +194,22 @@ public class UserView {
             System.out.println("\nLogin successful! Welcome, " + username.trim() + "!");
         } else {
             System.out.println("\nLogin failed: Invalid username or password.");
+        }
+    }
+
+    // Get a valid menu option (0 = Back)
+    private Integer promptForInt(String prompt) {
+        while (true) {
+            String input = getStringInput(prompt);
+            if (input == null) {
+                return null;
+            }
+
+            try {
+                return Integer.parseInt(input.trim());
+            } catch (NumberFormatException e) {
+                System.out.println("\nValidation Error: Please enter a valid whole number.");
+            }
         }
     }
 
