@@ -68,21 +68,23 @@ I organized the application into three tiers:
                     │
                     ▼
           ┌──────────────────┐
-          │ View             │  Menus, prompts, tables
+          │ View/Presentation│  Menus, prompts, tables
           └────────┬─────────┘
                    │
                    ▼
           ┌──────────────────┐
-          │ Service          │  Validation, business rules
+          │     Service      │  Validation, business rules
           └────────┬─────────┘
                    │
                    ▼
           ┌──────────────────┐
-          │ Repository       │  SQL queries, JDBC, object mapping
+          │   Repository /   │  SQL queries, JDBC, object mapping
+          |   Data Access    |
           └────────┬─────────┘
                    │
-                   ▼
-               MySQL DB
+                ┌──▼──┐
+                │ DB  │  MySQL
+                └─────┘
 ```
 
 The `model` package represents database entities, and `config/DbConnection.java` manages connections. `App.java` acts as the entry point and initializes the dependencies in order: **connection → repository → service → view**.
