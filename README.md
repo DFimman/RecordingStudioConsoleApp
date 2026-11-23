@@ -94,7 +94,7 @@ I use interfaces for repositories and services, with implementation classes hand
 ## Project Structure
 
 ```text
-b426-csp1-dichosa-immanuel/
+RecordingStudioConsoleApp/
 ├── pom.xml
 ├── src/
 │   └── main/java/com/joysistvi/recordingapp/
@@ -199,11 +199,11 @@ erDiagram
 
 | Table | Important columns |
 |---|---|
-| `artists` | `id`, `name`, `is_archived` |
-| `albums` | `id`, `name`, `year`, `artist_id`, `is_archived` |
-| `songs` | `id`, `title`, `genre`, `length`, `album_id`, `is_archived` |
-| `users` | `id`, `username`, `password`, `email`, `role`, `created_at`, `is_archived` |
-| `playlists` | `id`, `name`, `date_created`, `user_id`, `is_archived` |
+| `artists` | `id`, `name`, `is_archived` (default `FALSE`) |
+| `albums` | `id`, `name`, `year`, `artist_id` (FK) , `is_archived` (default `FALSE`) |
+| `songs` | `id`, `title`, `genre`, `length`, `album_id` (FK), `is_archived` (default `FALSE`) |
+| `users` | `id`, `username`, `password`, `email`, `role`, `created_at`, `is_archived` (default `FALSE`) |
+| `playlists` | `id`, `name`, `date_created`, `user_id` (FK), `is_archived` |
 | `playlist_songs` | `playlist_id`, `song_id` (composite primary key) |
 
 A **User can have multiple Playlists** (one-to-many), and a Playlist can contain multiple Songs. The same Song can also appear in multiple Playlists, creating a many-to-many relationship through `playlist_songs`.
@@ -216,7 +216,8 @@ The application has two roles:
 
 | Action | `USER` | `ADMIN` |
 |---|:---:|:---:|
-| Register and log in | ✓ | ✓ |
+| Register | ✓ | — |
+| Log in | ✓ | ✓ |
 | Browse artists, albums, and songs | ✓ | Through management menus |
 | Search songs | ✓ | ✓ |
 | Manage artist records | — | ✓ |
@@ -291,7 +292,7 @@ Only use this step on a database you control. Older sample accounts whose passwo
 1. Open the repository as a Maven project and allow IntelliJ to load dependencies.
 2. Start your local MySQL/MariaDB server.
 3. Open `src/main/java/com/joysistvi/recordingapp/App.java`.
-4. Run its `main()` method.
+4. Run its `main()` method - the `App.java`.
 5. For ANSI screen clearing, enable **Emulate terminal in output console** in your run configuration, if available.
 
 ### Option B: Maven compilation
