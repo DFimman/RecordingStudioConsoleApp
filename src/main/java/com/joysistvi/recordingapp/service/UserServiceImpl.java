@@ -16,6 +16,16 @@ public class UserServiceImpl implements UserService {
         this.userRepository = userRepository;
     }
 
+    // Find active user by ID
+    @Override
+    public User findById(int id) {
+        if (id <= 0) {
+            return null;
+        }
+
+        return userRepository.findById(id);
+    }
+
     @Override
     public List<User> getAllActiveUsers() {
         return userRepository.findAllActive();

@@ -16,14 +16,5 @@ public interface UserService {
     public boolean loginUser(String username, String candidatePassword);
     public User authenticateUser(String username, String candidatePassword);
 
-    // Look up the current values before updating a selected field
-    default User findById(int id) {
-        if (id <= 0) return null;
-        List<User> records = getAllActiveUsers();
-        if (records == null) return null;
-        for (User record : records) {
-            if (record.getId() == id) return record;
-        }
-        return null;
-    }
+    User findById(int id);
 }

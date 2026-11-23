@@ -16,6 +16,38 @@ public class SongRepositoryImpl implements SongRepository {
     }
 
     // Read Active Songs
+    // Find Active Song By ID
+    @Override
+    public Song findById(int id) {
+        String query = "SELECT songs.id, songs.title, songs.genre, songs.length, songs.album_id, " +
+                "albums.name AS album_name, songs.is_archived " +
+                "FROM songs JOIN albums ON songs.album_id = albums.id " +
+                "WHERE songs.id = ? AND songs.is_archived = 0";
+
+        try (Connection connection = dbConnection.connect();
+             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+
+            preparedStatement.setInt(1, id);
+
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    Song song = new Song(resultSet.getInt("id"),
+                            resultSet.getString("title"),
+                            resultSet.getString("genre"),
+                            resultSet.getString("length"),
+                            resultSet.getInt("album_id"),
+                            resultSet.getString("album_name"));
+                    song.setArchived(resultSet.getBoolean("is_archived"));
+                    return song;
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("\nFind Song Error: " + e.getMessage());
+        }
+
+        return null;
+    }
+
     @Override
     public List<Song> findAllActive() {
         List<Song> songs = new ArrayList<>();

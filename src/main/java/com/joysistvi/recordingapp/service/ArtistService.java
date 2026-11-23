@@ -13,14 +13,5 @@ public interface ArtistService {
     boolean restoreArtist(int id);
     List<Artist> searchArtists(String keyword);
 
-    // Read current details before editing one field
-    default Artist findById(int id) {
-        if (id <= 0) return null;
-        List<Artist> artists = getAllActiveArtists();
-        if (artists == null) return null;
-        for (Artist artist : artists) {
-            if (artist.getId() == id) return artist;
-        }
-        return null;
-    }
+    Artist findById(int id);
 }

@@ -16,6 +16,36 @@ public class AlbumRepositoryImpl implements AlbumRepository {
     }
 
     // Read Active Albums
+    // Find Active Album By ID
+    @Override
+    public Album findById(int id) {
+        String query = "SELECT albums.id, albums.name, albums.year, albums.artist_id, " +
+                "artists.name AS artist_name, albums.is_archived " +
+                "FROM albums JOIN artists ON albums.artist_id = artists.id " +
+                "WHERE albums.id = ? AND albums.is_archived = 0";
+
+        try (Connection connection = dbConnection.connect();
+             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+
+            preparedStatement.setInt(1, id);
+
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    return new Album(resultSet.getInt("id"),
+                            resultSet.getString("name"),
+                            resultSet.getInt("year"),
+                            resultSet.getInt("artist_id"),
+                            resultSet.getString("artist_name"),
+                            resultSet.getBoolean("is_archived"));
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("\nFind Album Error: " + e.getMessage());
+        }
+
+        return null;
+    }
+
     @Override
     public List<Album> findAllActive() {
         List<Album> albums = new ArrayList<>();
@@ -35,8 +65,9 @@ public class AlbumRepositoryImpl implements AlbumRepository {
                 int year = resultSet.getInt("year");
                 int artistId = resultSet.getInt("artist_id");
                 String artistName = resultSet.getString("artist_name");
+                boolean archived = resultSet.getBoolean("is_archived");
 
-                albums.add(new Album(id, name, year, artistId, artistName));
+                albums.add(new Album(id, name, year, artistId, artistName, archived));
             }
 
         } catch (SQLException e) {
@@ -66,8 +97,9 @@ public class AlbumRepositoryImpl implements AlbumRepository {
                 int year = resultSet.getInt("year");
                 int artistId = resultSet.getInt("artist_id");
                 String artistName = resultSet.getString("artist_name");
+                boolean archived = resultSet.getBoolean("is_archived");
 
-                albums.add(new Album(id, name, year, artistId, artistName));
+                albums.add(new Album(id, name, year, artistId, artistName, archived));
             }
 
         } catch (SQLException e) {
@@ -196,8 +228,9 @@ public class AlbumRepositoryImpl implements AlbumRepository {
                     int year = resultSet.getInt("year");
                     int artistId = resultSet.getInt("artist_id");
                     String artistName = resultSet.getString("artist_name");
+                    boolean archived = resultSet.getBoolean("is_archived");
 
-                    albums.add(new Album(id, name, year, artistId, artistName));
+                    albums.add(new Album(id, name, year, artistId, artistName, archived));
                 }
             }
 

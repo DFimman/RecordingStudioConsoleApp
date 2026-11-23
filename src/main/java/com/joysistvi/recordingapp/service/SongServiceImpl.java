@@ -15,6 +15,16 @@ public class SongServiceImpl implements SongService {
         this.songRepository = songRepository;
     }
 
+    // Find active song by ID
+    @Override
+    public Song findById(int id) {
+        if (id <= 0) {
+            return null;
+        }
+
+        return songRepository.findById(id);
+    }
+
     @Override
     public List<Song> getAllActiveSongs() {
         return songRepository.findAllActive();

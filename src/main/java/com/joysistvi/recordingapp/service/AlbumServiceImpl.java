@@ -3,7 +3,6 @@ package com.joysistvi.recordingapp.service;
 import com.joysistvi.recordingapp.model.Album;
 import com.joysistvi.recordingapp.repository.AlbumRepository;
 
-import java.time.Year;
 import java.util.Collections;
 import java.util.List;
 
@@ -14,6 +13,16 @@ public class AlbumServiceImpl implements AlbumService {
 
     public AlbumServiceImpl(AlbumRepository albumRepository) {
         this.albumRepository = albumRepository;
+    }
+
+    // Find active album by ID
+    @Override
+    public Album findById(int id) {
+        if (id <= 0) {
+            return null;
+        }
+
+        return albumRepository.findById(id);
     }
 
     @Override
@@ -32,8 +41,8 @@ public class AlbumServiceImpl implements AlbumService {
             System.out.println("\nValidation Error: Album name is required.");
             return false;
         }
-        if (year < 1900 || year > Year.now().getValue()) {
-            System.out.println("\nValidation Error: Year must be between 1900 and 2026.");
+        if (year < 1900 || year > 2100) {
+            System.out.println("\nValidation Error: Year must be between 1900 and 2100.");
             return false;
         }
         if (artistId <= 0) {

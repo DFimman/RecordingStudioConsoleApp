@@ -6,6 +6,7 @@ import java.util.List;
 // Repository(Data Tier) -> Data Access Logic and Data Persistence
 public interface UserRepository {
 
+    public User findById(int id);
     public List<User> findAllActive();
     public List<User> findAllArchived();
     public User findByUsername(String username);

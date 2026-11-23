@@ -6,6 +6,7 @@ import java.util.List;
 // Repository(Data Tier) -> Data Access Logic and Data Persistence
 public interface SongRepository {
 
+    public Song findById(int id);
     public List<Song> findAllActive();
     public List<Song> findAllArchived();
     public boolean save(Song song);

@@ -14,6 +14,16 @@ public class ArtistServiceImpl implements ArtistService{
         this.artistRepository = artistRepository;
     }
 
+    // Find active artist by ID
+    @Override
+    public Artist findById(int id) {
+        if (id <= 0) {
+            return null;
+        }
+
+        return artistRepository.findById(id);
+    }
+
     @Override
     public List<Artist> getAllActiveArtists() {
         return artistRepository.findAllActive();

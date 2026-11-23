@@ -16,6 +16,34 @@ public class UserRepositoryImpl implements UserRepository {
     }
 
     // Read Active Users
+    // Find Active User By ID
+    @Override
+    public User findById(int id) {
+        String query = "SELECT id, username, password, email, role, is_archived " +
+                "FROM users WHERE id = ? AND is_archived = 0";
+
+        try (Connection connection = dbConnection.connect();
+             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+
+            preparedStatement.setInt(1, id);
+
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                if (resultSet.next()) {
+                    return new User(resultSet.getInt("id"),
+                            resultSet.getString("username"),
+                            resultSet.getString("password"),
+                            resultSet.getString("email"),
+                            resultSet.getString("role"),
+                            resultSet.getBoolean("is_archived"));
+                }
+            }
+        } catch (SQLException e) {
+            System.out.println("\nFind User Error: " + e.getMessage());
+        }
+
+        return null;
+    }
+
     @Override
     public List<User> findAllActive() {
         List<User> users = new ArrayList<>();
