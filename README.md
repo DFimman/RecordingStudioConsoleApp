@@ -2,7 +2,7 @@
 
 A Java console application I developed for my **Programming (Java) NC III** coursework at Joysis Tech Voc Inc. It manages a recording studio's artists, albums, songs, users, and playlists using **Java 21**, **JDBC**, and a **MySQL/MariaDB** database.
 
-I built the application around a three-tier architecture to separate console interaction, business rules, and database access. It also includes account registration, BCrypt authentication, role-based dashboards, and playlists that belong to the signed-in user.
+I built the application around a three-tier architecture to separate console interaction, business rules, and database access. It also includes account registration, BCrypt authentication, role-based dashboards, and playlists that belong to the signed-in user. This is built as my final project capstone I.
 
 ## Table of Contents
 
@@ -22,30 +22,26 @@ I built the application around a three-tier architecture to separate console int
 
 ## Features
 
-### Catalog and user management (Admin)
+### Catalog and Account Management (`ADMIN`)
 
-- Create, view, search, update, archive, restore, and permanently delete **artists, albums, songs, and users**.
-- Use menu-driven updates to change a selected field while keeping the other fields unchanged.
-- Retrieve an active record by ID before updating it, using `findById()` in the Repository and Service layers.
-- Display archived records before asking which record to restore.
+- **Full CRUD and keyword search** for **Artists, Albums, Songs, and Users** — create, view, update, search, and permanently delete records.
+- **Soft delete (archive / restore)** for all four entities using `is_archived`, with archived records displayed before restoration.
+- **Selective, menu-driven updates** — choose the field to change while keeping other details unchanged. The app first retrieves the active record through repository-level `findById()`.
 
-### Playlist and catalog access (User)
+### Personal Playlists and Catalog Access (`USER`)
 
-- Browse active artists, albums, and songs, and search the song catalog.
-- Create, view, rename, search, archive, restore, and delete **my own playlists**.
-- Add songs to a playlist, view its songs, and remove songs through the `playlist_songs` junction table.
-- Automatically use the authenticated user's ID when creating or managing a playlist, instead of prompting for a user ID.
-- Restrict user-specific playlist queries and changes by playlist ownership.
+- **Browse and search** active Artists, Albums, and Songs without access to Admin management menus.
+- **Playlist management (CRUD, search, archive / restore)** for playlists belonging to the signed-in user; a user may own **multiple playlists**.
+- **Many-to-many song relationships** — view, add, or remove Songs in a Playlist through `playlist_songs`.
+- **Ownership checks** — the app uses the logged-in user's ID automatically and scopes playlist lookups and changes to that user.
 
-### Authentication and console interface
+### Authentication, Security, and Console Experience
 
-- Register accounts with the default `USER` role; hash new passwords with **BCrypt**.
-- Sign in with a username and password and display the authenticated account's username and role.
-- Show separate `ADMIN` and `USER` dashboards.
-- Validate blank input, invalid numbers, non-positive IDs, and other entity-specific fields.
-- Truncate long values **for display only** and keep the full values in the database.
-- Clear supported terminal screens using ANSI escape codes, with a pause so operation results remain readable.
-- Use `PreparedStatement` with parameters for database operations involving user-provided values.
+- **Login and registration** with **BCrypt password hashing** for new accounts; archived accounts cannot log in.
+- **Role-Based Access Control (RBAC)** — different `ADMIN` and `USER` dashboards, with the username and role shown after login.
+- **Input validation and descriptive errors** — reject blank values, invalid numbers, non-positive IDs, and other field-specific invalid input without crashing the menu.
+- **User-friendly console UX** — reusable table formatting, long-value truncation (`...`) for display only, ANSI screen clearing, and **Press Enter to continue** prompts.
+- **Parameterized SQL** — JDBC `PreparedStatement` is used for queries with user-supplied values, alongside try-with-resources for database resources.
 
 ## Tech Stack
 
@@ -68,32 +64,47 @@ I organized the application into three tiers:
                     │
                     ▼
           ┌──────────────────┐
-          │ View             │  Menus, prompts, tables
+          │ View/Presentation│  Menus, prompts, tables
           └────────┬─────────┘
                    │
                    ▼
           ┌──────────────────┐
-          │ Service          │  Validation, business rules
+          │     Service      │  Validation, business rules
           └────────┬─────────┘
                    │
                    ▼
           ┌──────────────────┐
-          │ Repository       │  SQL queries, JDBC, object mapping
+          │   Repository /   │  SQL queries, JDBC, object mapping
+          |   Data Access    |
           └────────┬─────────┘
                    │
-                   ▼
-               MySQL DB
+                ┌──▼──┐
+                │ DB  │  MySQL
+                └─────┘
 ```
 
 The `model` package represents database entities, and `config/DbConnection.java` manages connections. `App.java` acts as the entry point and initializes the dependencies in order: **connection → repository → service → view**.
 
 I use interfaces for repositories and services, with implementation classes handling the actual behavior. The Service layer validates inputs and delegates database operations to the Repository layer. Console messages are currently printed by both Views and some Services, which is an area I can refine in future versions.
 
+### Key Principles I Applied
+
+- **Separation of Concerns (SoC):** I keep console menus and input in the **View**, validation and application rules in the **Service**, and SQL and object mapping in the **Repository**.
+- **Layered Architecture:** I follow the **View → Service → Repository → Database** flow, making each part easier to work on independently.
+- **Abstraction and Programming to Interfaces:** My services and repositories use interfaces so I can change implementations or introduce test doubles without rewriting the rest of the app.
+- **Composition Over Inheritance:** `App.java` assembles repositories, services, and views using objects rather than inheritance.
+- **DRY (Don't Repeat Yourself), Where Practical:** I use `ConsoleOutput` for shared screen clearing, pausing, and text truncation. Some View input helpers are still repeated and could be extracted later.
+- **Guard Clauses and Input Validation:** I check invalid input early in Service methods and console input helpers to prevent unnecessary operations.
+- **Parameterized Queries and Ownership Checks:** I use `PreparedStatement` for user-supplied SQL values, and include the authenticated user's ID in personal-playlist queries.
+- **Resource Management:** I use JDBC **try-with-resources** so connections, statements, and result sets are closed properly.
+
 ## Project Structure
 
 ```text
-b426-csp1-dichosa-immanuel/
+RecordingStudioConsoleApp/
 ├── pom.xml
+├── database/
+│   └── schema.sql                 # Tables, keys, and relationships (no user data)
 ├── src/
 │   └── main/java/com/joysistvi/recordingapp/
 │       ├── App.java                   # Application entry point
@@ -197,11 +208,11 @@ erDiagram
 
 | Table | Important columns |
 |---|---|
-| `artists` | `id`, `name`, `is_archived` |
-| `albums` | `id`, `name`, `year`, `artist_id`, `is_archived` |
-| `songs` | `id`, `title`, `genre`, `length`, `album_id`, `is_archived` |
-| `users` | `id`, `username`, `password`, `email`, `role`, `created_at`, `is_archived` |
-| `playlists` | `id`, `name`, `date_created`, `user_id`, `is_archived` |
+| `artists` | `id`, `name`, `is_archived` (default `FALSE`) |
+| `albums` | `id`, `name`, `year`, `artist_id` (FK), `is_archived` (default `FALSE`) |
+| `songs` | `id`, `title`, `genre`, `length`, `album_id` (FK), `is_archived` (default `FALSE`) |
+| `users` | `id`, `username`, `password`, `email`, `role`, `created_at`, `is_archived` (default `FALSE`) |
+| `playlists` | `id`, `name`, `date_created`, `user_id` (FK), `is_archived` (default `FALSE`) |
 | `playlist_songs` | `playlist_id`, `song_id` (composite primary key) |
 
 A **User can have multiple Playlists** (one-to-many), and a Playlist can contain multiple Songs. The same Song can also appear in multiple Playlists, creating a many-to-many relationship through `playlist_songs`.
@@ -214,7 +225,8 @@ The application has two roles:
 
 | Action | `USER` | `ADMIN` |
 |---|:---:|:---:|
-| Register and log in | ✓ | ✓ |
+| Register | ✓ | — |
+| Log in | ✓ | ✓ |
 | Browse artists, albums, and songs | ✓ | Through management menus |
 | Search songs | ✓ | ✓ |
 | Manage artist records | — | ✓ |
@@ -231,7 +243,7 @@ The account's role is read after login to decide which dashboard to show. Self-r
 ### Prerequisites
 
 - JDK **21**
-- A local MySQL or MariaDB server (for example, through XAMPP)
+- A local MySQL or MariaDB server (for example, through XAMPP), with access to phpMyAdmin or the MySQL CLI
 - Maven and IntelliJ IDEA, or another Java IDE with Maven support
 - Git
 
@@ -244,19 +256,51 @@ cd b426-csp1-dichosa-immanuel
 
 ### 2. Set up the database
 
-Create the database in phpMyAdmin or your SQL client:
+I keep the database structure in **`database/schema.sql`** at the root of this repository. The file creates `recording_studio_db` and the six tables, primary/foreign keys, and indexes needed by the application. It contains **no sample accounts, passwords, or personal information**.
+
+Choose **one** of these setup options:
+
+#### Option A: Use an existing local database
+
+If I already have `recording_studio_db` configured in MySQL/MariaDB with the latest tables, columns, and relationships, I can use it directly. I don't need to import the schema again. This is the option to use if I've been running and testing the project with an existing database.
+
+I can check that the database exists with:
 
 ```sql
-CREATE DATABASE IF NOT EXISTS recording_studio_db;
+SHOW DATABASES LIKE 'recording_studio_db';
+USE recording_studio_db;
+SHOW TABLES;
 ```
 
-Import the SQL export for this project into that database. **The current GitHub repository does not contain a `database/schema.sql` file**, so the database dump must be obtained separately. Make sure the imported schema contains all six tables listed above, including `is_archived` on the management tables and the `playlist_songs` junction table.
+#### Option B: Import my SQL schema file (new installation)
 
-For a local SQL export named `recording_studio_db.sql`, the MySQL command-line alternative is:
+The included **`database/schema.sql`** is for setting up a **new, empty database**.
+
+**Using phpMyAdmin (for example, with XAMPP):**
+
+1. Start MySQL/MariaDB and open **phpMyAdmin**.
+2. Open the **Import** tab from the server-level page.
+3. Select **`database/schema.sql`** from this repository.
+4. Click **Import / Go**. The script creates and selects `recording_studio_db` automatically.
+5. Open `recording_studio_db` and check that the six tables are present.
+
+**Using the MySQL command line (Bash or Windows Command Prompt):**
+
+From the repository root, run:
 
 ```bash
-mysql -u root -p recording_studio_db < recording_studio_db.sql
+mysql -u root -p < database/schema.sql
 ```
+
+If I'm using **PowerShell**, I can run the MySQL client's `source` command instead of using `<` redirection:
+
+```powershell
+mysql -u root -p -e "source database/schema.sql"
+```
+
+After importing, the tables will be **empty**. I can register a new `USER` account when I run the app, then create Artists, Albums, and Songs through an Admin account. To grant an account the `ADMIN` role for local testing, see **Step 4** below.
+
+> **Important:** I should import this file into an empty database, not over an existing database with records. The schema file creates tables; it is **not** a migration or database backup. I should also avoid committing a full SQL dump containing actual emails, accounts, plaintext passwords, or other sensitive data.
 
 ### 3. Configure the database connection
 
@@ -289,7 +333,7 @@ Only use this step on a database you control. Older sample accounts whose passwo
 1. Open the repository as a Maven project and allow IntelliJ to load dependencies.
 2. Start your local MySQL/MariaDB server.
 3. Open `src/main/java/com/joysistvi/recordingapp/App.java`.
-4. Run its `main()` method.
+4. Run its `main()` method - the `App.java`.
 5. For ANSI screen clearing, enable **Emulate terminal in output console** in your run configuration, if available.
 
 ### Option B: Maven compilation
