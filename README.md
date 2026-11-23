@@ -2,7 +2,7 @@
 
 A Java console application I developed for my **Programming (Java) NC III** coursework at Joysis Tech Voc Inc. It manages a recording studio's artists, albums, songs, users, and playlists using **Java 21**, **JDBC**, and a **MySQL/MariaDB** database.
 
-I built the application around a three-tier architecture to separate console interaction, business rules, and database access. It also includes account registration, BCrypt authentication, role-based dashboards, and playlists that belong to the signed-in user.
+I built the application around a three-tier architecture to separate console interaction, business rules, and database access. It also includes account registration, BCrypt authentication, role-based dashboards, and playlists that belong to the signed-in user. This is built as my final project capstone I.
 
 ## Table of Contents
 
