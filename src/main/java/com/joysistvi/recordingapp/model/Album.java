@@ -31,6 +31,9 @@ public class Album {
         this.artistName = artistName;
     }
 
+    public Album(int id, String name, int year, int artistId, String artistName, boolean isArchived) {
+    }
+
     public int getId() {
         return id;
     }
