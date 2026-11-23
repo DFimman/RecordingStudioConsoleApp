@@ -41,7 +41,7 @@ public class UserServiceImpl implements UserService {
             return false;
         }
 
-        String hashedPassword = BCrypt.hashpw(rawPassword.trim(), BCrypt.gensalt());
+        String hashedPassword = BCrypt.hashpw(rawPassword, BCrypt.gensalt());
         User user = new User(username.trim(), hashedPassword, email.trim());
         return userRepository.save(user);
     }
@@ -107,25 +107,32 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public boolean loginUser(String username, String candidatePassword) {
+        return authenticateUser(username, candidatePassword) != null;
+    }
+
+    // Return the authenticated user, including ID and role
+    @Override
+    public User authenticateUser(String username, String candidatePassword) {
         if (username == null || username.trim().isEmpty()) {
             System.out.println("\nValidation Error: Username is required to log in.");
-            return false;
+            return null;
         }
         if (candidatePassword == null || candidatePassword.isEmpty()) {
             System.out.println("\nValidation Error: Password is required to log in.");
-            return false;
+            return null;
         }
 
         User user = userRepository.findByUsername(username.trim());
-
         if (user == null || user.isArchived() || user.getPassword() == null) {
-            return false;
+            return null;
         }
-
         try {
-            return BCrypt.checkpw(candidatePassword, user.getPassword());
+            if (BCrypt.checkpw(candidatePassword, user.getPassword())) {
+                return user;
+            }
         } catch (IllegalArgumentException e) {
-            return false;
+            // Existing records with invalid / old plaintext hashes cannot log in.
         }
+        return null;
     }
 }

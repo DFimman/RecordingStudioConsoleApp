@@ -2,246 +2,173 @@ package com.joysistvi.recordingapp;
 
 import com.joysistvi.recordingapp.config.DbConnection;
 import com.joysistvi.recordingapp.model.User;
-import com.joysistvi.recordingapp.repository.ArtistRepository;
-import com.joysistvi.recordingapp.repository.ArtistRepositoryImpl;
-import com.joysistvi.recordingapp.repository.AlbumRepository;
-import com.joysistvi.recordingapp.repository.AlbumRepositoryImpl;
-import com.joysistvi.recordingapp.repository.SongRepository;
-import com.joysistvi.recordingapp.repository.SongRepositoryImpl;
-import com.joysistvi.recordingapp.repository.PlaylistRepository;
-import com.joysistvi.recordingapp.repository.PlaylistRepositoryImpl;
-import com.joysistvi.recordingapp.repository.UserRepository;
-import com.joysistvi.recordingapp.repository.UserRepositoryImpl;
-import com.joysistvi.recordingapp.service.ArtistService;
-import com.joysistvi.recordingapp.service.ArtistServiceImpl;
-import com.joysistvi.recordingapp.service.AlbumService;
-import com.joysistvi.recordingapp.service.AlbumServiceImpl;
-import com.joysistvi.recordingapp.service.SongService;
-import com.joysistvi.recordingapp.service.SongServiceImpl;
-import com.joysistvi.recordingapp.service.PlaylistService;
-import com.joysistvi.recordingapp.service.PlaylistServiceImpl;
-import com.joysistvi.recordingapp.service.UserService;
-import com.joysistvi.recordingapp.service.UserServiceImpl;
-import com.joysistvi.recordingapp.view.ArtistView;
-import com.joysistvi.recordingapp.view.AlbumView;
-import com.joysistvi.recordingapp.view.SongView;
-import com.joysistvi.recordingapp.view.UserView;
-import com.joysistvi.recordingapp.view.PlaylistView;
+import com.joysistvi.recordingapp.repository.*;
+import com.joysistvi.recordingapp.service.*;
+import com.joysistvi.recordingapp.view.*;
 
 import java.util.NoSuchElementException;
 import java.util.Scanner;
+import static com.joysistvi.recordingapp.view.ConsoleOutput.clearScreen;
 
 public class App {
+    private final DbConnection dbConnection = new DbConnection();
+    private final Scanner scanner = new Scanner(System.in);
 
-    private final Scanner scanner;
-    private final UserService userService;
-    private final SongView songView;
-    private final ArtistView artistView;
-    private final AlbumView albumView;
-    private final UserView userView;
-    private final PlaylistView playlistView;
-    private String currentUser;
+    // Dependencies initialized as fields, bottom-up
+    private final SongRepository songRepository = new SongRepositoryImpl(dbConnection);
+    private final SongService songService = new SongServiceImpl(songRepository);
+    private final SongView songView = new SongView(songService, scanner);
 
-    // Constructor for the original four management modules
-    public App(Scanner scanner, UserService userService, SongView songView,
-               ArtistView artistView, AlbumView albumView, UserView userView) {
-        this(scanner, userService, songView, artistView, albumView, userView, null);
-    }
+    private final ArtistRepository artistRepository = new ArtistRepositoryImpl(dbConnection);
+    private final ArtistService artistService = new ArtistServiceImpl(artistRepository);
+    private final ArtistView artistView = new ArtistView(artistService, scanner);
 
-    public App(Scanner scanner, UserService userService, SongView songView,
-               ArtistView artistView, AlbumView albumView, UserView userView, PlaylistView playlistView) {
-        this.scanner = scanner;
-        this.userService = userService;
-        this.songView = songView;
-        this.artistView = artistView;
-        this.albumView = albumView;
-        this.userView = userView;
-        this.playlistView = playlistView;
-    }
+    private final AlbumRepository albumRepository = new AlbumRepositoryImpl(dbConnection);
+    private final AlbumService albumService = new AlbumServiceImpl(albumRepository);
+    private final AlbumView albumView = new AlbumView(albumService, scanner);
+
+    private final UserRepository userRepository = new UserRepositoryImpl(dbConnection);
+    private final UserService userService = new UserServiceImpl(userRepository);
+    private final UserView userView = new UserView(userService, scanner);
+
+    private final PlaylistRepository playlistRepository = new PlaylistRepositoryImpl(dbConnection);
+    private final PlaylistService playlistService = new PlaylistServiceImpl(playlistRepository);
+    private final PlaylistView playlistView = new PlaylistView(playlistService, songService, scanner);
+
+    private User currentUser;
 
     public static void main(String[] args) {
-        DbConnection dbConnection = new DbConnection();
-        Scanner scanner = new Scanner(System.in);
-
-        // SONG
-        SongRepository songRepository = new SongRepositoryImpl(dbConnection);
-        SongService songService = new SongServiceImpl(songRepository);
-        SongView songView = new SongView(songService, scanner);
-
-        // ARTIST
-        ArtistRepository artistRepository = new ArtistRepositoryImpl(dbConnection);
-        ArtistService artistService = new ArtistServiceImpl(artistRepository);
-        ArtistView artistView = new ArtistView(artistService, scanner);
-
-        // ALBUM
-        AlbumRepository albumRepository = new AlbumRepositoryImpl(dbConnection);
-        AlbumService albumService = new AlbumServiceImpl(albumRepository);
-        AlbumView albumView = new AlbumView(albumService, scanner);
-
-        // USER
-        UserRepository userRepository = new UserRepositoryImpl(dbConnection);
-        UserService userService = new UserServiceImpl(userRepository);
-        UserView userView = new UserView(userService, scanner);
-
-        // PLAYLIST
-        PlaylistRepository playlistRepository = new PlaylistRepositoryImpl(dbConnection);
-        PlaylistService playlistService = new PlaylistServiceImpl(playlistRepository);
-        PlaylistView playlistView = new PlaylistView(playlistService, scanner);
-
-        App app = new App(scanner, userService, songView, artistView, albumView, userView, playlistView);
-        app.run();
-
-        // prevent error after closing the app
-        scanner.close();
+        App app = new App();
+        try {
+            app.run();
+        } finally {
+            app.scanner.close();
+        }
     }
 
     public void run() {
         while (true) {
-            showAuthMenuAndAuthenticate();
-
+            currentUser = showAuthMenuAndAuthenticate();
             if (currentUser == null) {
+                System.out.println("\nExiting Recording Studio App.");
                 return;
             }
-
-            if (currentUser.role == "ADMIN"){
+            String role = currentUser.getRole();
+            if ("ADMIN".equalsIgnoreCase(role)) {
                 adminDashboard();
-            } else if (currentUser.role == "USER"){
-                userDashboard(currentUser);
+            } else if ("USER".equalsIgnoreCase(role)) {
+                userDashboard();
+            } else {
+                System.out.println("\nAccess denied: Unknown user role.");
             }
-
+            System.out.println("\nLogged out " + currentUser.getUsername() + ".");
             currentUser = null;
-            System.out.println("\nLogged out successfully!");
         }
     }
 
-    // Authentication Menu
-    private void showAuthMenuAndAuthenticate() {
+    // Shared authentication for Admin and User
+    private User showAuthMenuAndAuthenticate() {
         while (true) {
+            clearScreen();
             System.out.println("\n=== RECORDING STUDIO APP ===");
             System.out.println("1. Login");
-            System.out.println("2. Register User");
+            System.out.println("2. Register Account");
             System.out.println("0. Exit");
-
             Integer choice = promptForInt("Choose an option: ");
-            if (choice == null) {
-                return;
-            }
+            if (choice == null) return null;
 
             switch (choice) {
                 case 1 -> {
                     String username = getStringInput("Enter username: ");
-                    if (username == null) {
-                        return;
-                    }
-
+                    if (username == null) return null;
                     String password = getStringInput("Enter password: ");
-                    if (password == null) {
-                        return;
+                    if (password == null) return null;
+                    User authenticated = userService.authenticateUser(username, password);
+                    if (authenticated != null) {
+                        System.out.println("\nLogin successful! Welcome, " + authenticated.getUsername() +
+                                " (" + authenticated.getRole() + ")!");
+                        return authenticated;
                     }
-
-                    boolean loggedIn = userService.loginUser(username, password);
-
-                    if (loggedIn) {
-                        currentUser = username.trim();
-                        System.out.println("\nLogin successful! Welcome, " + currentUser + "!");
-                        return;
-                    } else {
-                        System.out.println("\nLogin failed: Invalid username or password.");
-                    }
+                    System.out.println("\nLogin failed: Invalid username or password.");
                 }
-                case 2 -> userView.promptCreateUser();
-                case 0 -> {
-                    return;
-                }
+                case 2 -> { userView.promptCreateUser(); if (!ConsoleOutput.pause(scanner)) return null; }
+                case 0 -> { return null; }
                 default -> System.out.println("Invalid option. Please try again.");
             }
         }
     }
 
-    // Main Dashboard
+    // ADMIN can manage the catalog and users.
     private void adminDashboard() {
         while (true) {
-            System.out.println("\n1. Song Management");
-            System.out.println("2. Artist Management");
-            System.out.println("3. Album Management");
-            System.out.println("4. Users Management");
-            System.out.println("5. Playlist Management");
-            System.out.println("0. Back");
-
+            clearScreen();
+            System.out.println("\n=== ADMIN DASHBOARD ===");
+            System.out.println("Logged in as " + currentUser.getUsername() + " (" + currentUser.getRole() + ")");
+            System.out.println("1. Manage Artists");
+            System.out.println("2. Manage Albums");
+            System.out.println("3. Manage Songs");
+            System.out.println("4. Manage Users");
+            System.out.println("0. Logout");
             Integer choice = promptForInt("Choice: ");
-            if (choice == null) {
-                return;
-            }
-
+            if (choice == null) return;
             switch (choice) {
-                case 1 -> songView.handleMenu();
-                case 2 -> artistView.handleMenu();
-                case 3 -> albumView.handleMenu();
+                case 1 -> artistView.handleMenu();
+                case 2 -> albumView.handleMenu();
+                case 3 -> songView.handleMenu();
                 case 4 -> userView.handleMenu();
-                case 5 -> {
-                    if (playlistView == null) {
-                        System.out.println("Playlist Management is unavailable.");
-                    } else {
-                        playlistView.handleMenu();
-                    }
-                }
-                case 0 -> {
-                    return;
-                }
+                case 0 -> { return; }
                 default -> System.out.println("Invalid choice. Please try again.");
             }
         }
     }
 
-    private void userDashboard(User currentUser){
+    // USER can browse and search the catalog and manage only their own playlists.
+    private void userDashboard() {
         while (true) {
+            clearScreen();
             System.out.println("\n=== USER DASHBOARD ===");
+            System.out.println("Logged in as " + currentUser.getUsername() + " (" + currentUser.getRole() + ")");
             System.out.println("1. Browse Artists, Albums, Songs");
             System.out.println("2. Search Songs");
-            System.out.println("3. Manage Playlist");
+            System.out.println("3. Manage My Playlists");
             System.out.println("4. Add / Remove Songs in Playlist");
             System.out.println("0. Logout");
-
             Integer choice = promptForInt("Choice: ");
-
-            switch (choice){
+            if (choice == null) return;
+            switch (choice) {
                 case 1 -> browseCatalog();
-                case 2 -> songView.promptSearchSongs();
-                case 3 -> playlistView.handleMenu(currentUser.getID());
-                case 4 -> playlistView.handleManageSongsInPlaylist(currentUser.getID());
-                case 0 -> {return;}
-                case null -> {
-                    System.out.println("Enter again.");
-                }
-                default -> throw new IllegalStateException("Unexpected value: " + choice);
-
+                case 2 -> { songView.promptSearchSongs(); if (!ConsoleOutput.pause(scanner)) return; }
+                case 3 -> playlistView.handleMenu(currentUser.getId());
+                case 4 -> playlistView.handleManageSongsInPlaylist(currentUser.getId());
+                case 0 -> { return; }
+                default -> System.out.println("Invalid choice. Please try again.");
             }
         }
     }
-    private  void browseCatalog() {
-        System.out.println("\n=== BROWSE CATALOG ===");
-        System.out.println("1. View Artists");
-        System.out.println("2. View Albums");
-        System.out.println("3. Viw Songs");
-        System.out.println("0. Back");
 
-        Integer choice = promptForInt("Choice: ");
-
-        switch (choice) {
-            case 1 -> artistView.displayAllArtist();
-            case 2 -> albumView.displayAllAlbums();
-            case 3 -> songView.displayAllSongs();
-            case 0 -> {return;}
-            case null -> {
-                System.out.println("Enter again.");
+    private void browseCatalog() {
+        while (true) {
+            clearScreen();
+            System.out.println("\n=== BROWSE CATALOG ===");
+            System.out.println("1. View Artists");
+            System.out.println("2. View Albums");
+            System.out.println("3. View Songs");
+            System.out.println("0. Back");
+            Integer choice = promptForInt("Choice: ");
+            if (choice == null) return;
+            switch (choice) {
+                case 1 -> artistView.displayAllArtist();
+                case 2 -> albumView.displayAllAlbums();
+                case 3 -> songView.displayAllSongs();
+                case 0 -> { return; }
+                default -> System.out.println("Invalid choice. Please try again.");
             }
-            default -> throw new IllegalStateException("Unexpected value: " + choice);
+            if (!ConsoleOutput.pause(scanner)) return;
         }
     }
-    // Get console input
+
     private String getStringInput(String prompt) {
         System.out.print(prompt);
-
         try {
             return scanner.nextLine();
         } catch (NoSuchElementException | IllegalStateException e) {
@@ -250,14 +177,10 @@ public class App {
         }
     }
 
-    // Get a valid menu option (0 = Back)
     private Integer promptForInt(String prompt) {
         while (true) {
             String input = getStringInput(prompt);
-            if (input == null) {
-                return null;
-            }
-
+            if (input == null) return null;
             try {
                 return Integer.parseInt(input.trim());
             } catch (NumberFormatException e) {

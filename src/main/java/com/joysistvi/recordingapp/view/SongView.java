@@ -6,6 +6,8 @@ import com.joysistvi.recordingapp.service.SongService;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
+import static com.joysistvi.recordingapp.view.ConsoleOutput.clearScreen;
+import static com.joysistvi.recordingapp.view.ConsoleOutput.truncate;
 
 public class SongView {
 
@@ -19,6 +21,7 @@ public class SongView {
 
     public void handleMenu() {
         while (true) {
+            clearScreen();
             System.out.println("\n=== MANAGE SONGS ===");
             System.out.println("1. View All Songs");
             System.out.println("2. Create Song");
@@ -47,6 +50,7 @@ public class SongView {
                 }
                 default -> System.out.println("Invalid option. Please try again.");
             }
+            if (!ConsoleOutput.pause(scanner)) return;
         }
     }
 
@@ -55,11 +59,13 @@ public class SongView {
     }
 
     public void displayAllSongs(boolean isArchived) {
+        clearScreen();
         List<Song> songs = isArchived ? songService.getAllArchivedSongs() : songService.getAllActiveSongs();
         printSongs(songs, isArchived ? "Archived Songs" : "Songs");
     }
 
     public void promptCreateSong() {
+        clearScreen();
         System.out.println("\n----- Create New Song -----");
         String title = getStringInput("Enter song title: ");
         if (title == null) {
@@ -91,42 +97,44 @@ public class SongView {
     }
 
     public void promptUpdateSong() {
+        clearScreen();
         System.out.println("\n----- Update Song -----");
         Integer id = getIntInput("Enter song id: ");
-        if (id == null) {
+        if (id == null) return;
+
+        Song existing = songService.findById(id);
+        if (existing == null) {
+            System.out.println("\nNo active song found with ID " + id + ".");
             return;
         }
+        System.out.println("Current: " + existing.getTitle() + " | " + existing.getGenre() +
+                " | " + existing.getLength() + " | Album " + existing.getAlbumId());
+        System.out.println("1. Title");
+        System.out.println("2. Genre");
+        System.out.println("3. Length");
+        System.out.println("4. Album ID");
+        System.out.println("0. Cancel");
+        Integer choice = promptForInt("Which detail to change? ");
+        if (choice == null || choice == 0) return;
 
-        String title = getStringInput("Enter new song title: ");
-        if (title == null) {
-            return;
+        String title = existing.getTitle();
+        String genre = existing.getGenre();
+        String length = existing.getLength();
+        int albumId = existing.getAlbumId();
+        switch (choice) {
+            case 1 -> { title = getStringInput("Enter new title: "); if (title == null) return; }
+            case 2 -> { genre = getStringInput("Enter new genre: "); if (genre == null) return; }
+            case 3 -> { length = getStringInput("Enter new length (e.g. 3:45): "); if (length == null) return; }
+            case 4 -> { Integer value = getIntInput("Enter new album ID: ");
+                        if (value == null) return; albumId = value; }
+            default -> { System.out.println("Invalid option."); return; }
         }
-
-        String genre = getStringInput("Enter new genre: ");
-        if (genre == null) {
-            return;
-        }
-
-        String length = getStringInput("Enter new song length (e.g. 3:45): ");
-        if (length == null) {
-            return;
-        }
-
-        Integer albumId = getIntInput("Enter new album id: ");
-        if (albumId == null) {
-            return;
-        }
-
         boolean updated = songService.updateSong(id, title, genre, length, albumId);
-
-        if (updated) {
-            System.out.println("\nSong ID " + id + " updated successfully!");
-        } else {
-            System.out.println("\nFailed to update song ID " + id + ".");
-        }
+        System.out.println(updated ? "\nSong updated successfully!" : "\nFailed to update song.");
     }
 
     public void promptDeleteSong() {
+        clearScreen();
         System.out.println("\n----- Delete Song -----");
         Integer id = getIntInput("Enter song id: ");
         if (id == null) {
@@ -143,6 +151,7 @@ public class SongView {
     }
 
     public void promptArchiveSong() {
+        clearScreen();
         System.out.println("\n----- Archive Song -----");
         Integer id = getIntInput("Enter song id: ");
         if (id == null) {
@@ -159,6 +168,7 @@ public class SongView {
     }
 
     public void promptRestoreSong() {
+        clearScreen();
         System.out.println("\n----- Restore Song -----");
         List<Song> archivedSongs = songService.getAllArchivedSongs();
         printSongs(archivedSongs, "Archived Songs");
@@ -182,6 +192,7 @@ public class SongView {
     }
 
     public void promptSearchSongs() {
+        clearScreen();
         System.out.println("\n----- Search Songs -----");
         String keyword = getStringInput("Enter keyword (search): ");
         if (keyword == null) {
@@ -269,10 +280,10 @@ public class SongView {
         for (Song song : songs) {
             System.out.printf("%-4d| %-25s| %-15s| %-8s| %-22s%n",
                     song.getId(),
-                    song.getTitle(),
-                    song.getGenre(),
+                    truncate(song.getTitle(), 25),
+                    truncate(song.getGenre(), 15),
                     song.getLength(),
-                    song.getAlbumName());
+                    truncate(song.getAlbumName(), 22));
         }
     }
 }

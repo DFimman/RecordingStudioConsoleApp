@@ -7,6 +7,8 @@ import com.joysistvi.recordingapp.service.ArtistService;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
+import static com.joysistvi.recordingapp.view.ConsoleOutput.clearScreen;
+import static com.joysistvi.recordingapp.view.ConsoleOutput.truncate;
 
 public class ArtistView {
 
@@ -21,6 +23,7 @@ public class ArtistView {
     // Artist Management Menu
     public void handleMenu() {
         while (true) {
+            clearScreen();
             System.out.println("\n=== MANAGE ARTISTS ===");
             System.out.println("1. View All Artists");
             System.out.println("2. Create Artist");
@@ -49,6 +52,7 @@ public class ArtistView {
                 }
                 default -> System.out.println("Invalid option. Please try again.");
             }
+            if (!ConsoleOutput.pause(scanner)) return;
         }
     }
 
@@ -57,6 +61,7 @@ public class ArtistView {
     }
 
     public void displayAllArtist(boolean isArchived) {
+        clearScreen();
         List<Artist> artists = isArchived ? artistService.getAllArchivedArtists() : artistService.getAllActiveArtists();
 
         String title = isArchived ? "Archived Artists" : "Artists";
@@ -64,6 +69,7 @@ public class ArtistView {
     }
 
     public void promptCreateArtist() {
+        clearScreen();
         System.out.println("\n----- Create New Artist -----");
         String name = getStringInput("Enter artist name: ");
         if (name == null) {
@@ -79,27 +85,34 @@ public class ArtistView {
         }
     }
 
-    public void promptUpdateArtist(){
+    public void promptUpdateArtist() {
+        clearScreen();
         System.out.println("\n----- Update Artist -----");
         Integer id = getIntInput("Enter artist id: ");
-        if (id == null) {
+        if (id == null) return;
+
+        Artist existing = artistService.findById(id);
+        if (existing == null) {
+            System.out.println("\nNo active artist found with ID " + id + ".");
+            return;
+        }
+        System.out.println("Current artist: " + existing.getName());
+        System.out.println("1. Change Name");
+        System.out.println("0. Cancel");
+        Integer choice = promptForInt("Which detail to change? ");
+        if (choice == null || choice == 0) return;
+        if (choice != 1) {
+            System.out.println("Invalid option.");
             return;
         }
         String name = getStringInput("Enter new artist name: ");
-        if (name == null) {
-            return;
-        }
-
+        if (name == null) return;
         boolean updated = artistService.updateArtist(id, name);
-
-        if (updated) {
-            System.out.println("\nArtist ID " + id + " updated successfully!");
-        } else {
-            System.out.println("\nNo artist found with ID " + id + ".");
-        }
+        System.out.println(updated ? "\nArtist updated successfully!" : "\nFailed to update artist.");
     }
 
     public void promptDeleteArtist(){
+        clearScreen();
         System.out.println("\n----- Delete Artist -----");
         Integer id = getIntInput("Enter artist id: ");
         if (id == null) {
@@ -116,6 +129,7 @@ public class ArtistView {
     }
 
     public void promptArchiveArtist(){
+        clearScreen();
         System.out.println("\n----- Archive Artist -----");
         Integer id = getIntInput("Enter artist id: ");
         if (id == null) {
@@ -132,6 +146,7 @@ public class ArtistView {
     }
 
     public void promptRestoreArtist(){
+        clearScreen();
         System.out.println("\n----- Restore Artist -----");
 
         List<Artist> archivedArtists = artistService.getAllArchivedArtists();
@@ -156,6 +171,7 @@ public class ArtistView {
     }
 
     public void promptSearchArtist(){
+        clearScreen();
         System.out.println("\n----- Search Artists -----");
 
         String keyword = getStringInput("Enter Keyword (search): ");
@@ -238,7 +254,7 @@ public class ArtistView {
         for (Artist artist : artists) {
             System.out.printf("%-4d| %-20s%n",
                     artist.getId(),
-                    artist.getName());
+                    truncate(artist.getName(), 20));
         }
     }
 }

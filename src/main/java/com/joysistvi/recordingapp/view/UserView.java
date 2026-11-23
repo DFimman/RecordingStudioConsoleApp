@@ -6,6 +6,8 @@ import com.joysistvi.recordingapp.service.UserService;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
+import static com.joysistvi.recordingapp.view.ConsoleOutput.clearScreen;
+import static com.joysistvi.recordingapp.view.ConsoleOutput.truncate;
 
 public class UserView {
 
@@ -20,6 +22,7 @@ public class UserView {
     // User Management Menu
     public void handleMenu() {
         while (true) {
+            clearScreen();
             System.out.println("\n=== MANAGE USERS ===");
             System.out.println("1. View All Users");
             System.out.println("2. Create/Register User");
@@ -48,6 +51,7 @@ public class UserView {
                 }
                 default -> System.out.println("Invalid option. Please try again.");
             }
+            if (!ConsoleOutput.pause(scanner)) return;
         }
     }
 
@@ -56,6 +60,7 @@ public class UserView {
     }
 
     public void displayAllUsers(boolean isArchived) {
+        clearScreen();
         List<User> users = isArchived ? userService.getAllArchivedUsers() : userService.getAllActiveUsers();
 
         String title = isArchived ? "Archived Users" : "Users";
@@ -63,6 +68,7 @@ public class UserView {
     }
 
     public void promptCreateUser() {
+        clearScreen();
         System.out.println("\n----- Create New User -----");
         String username = getStringInput("Enter username: ");
         if (username == null) {
@@ -87,31 +93,35 @@ public class UserView {
     }
 
     public void promptUpdateUser() {
+        clearScreen();
         System.out.println("\n----- Update User -----");
         Integer id = getIntInput("Enter user id: ");
-        if (id == null) {
-            return;
-        }
+        if (id == null) return;
 
-        String username = getStringInput("Enter new username: ");
-        if (username == null) {
+        User existing = userService.findById(id);
+        if (existing == null) {
+            System.out.println("\nNo active user found with ID " + id + ".");
             return;
         }
-        String email = getStringInput("Enter new email: ");
-        if (email == null) {
-            return;
+        System.out.println("Current: " + existing.getUsername() + " | " + existing.getEmail());
+        System.out.println("1. Username");
+        System.out.println("2. Email");
+        System.out.println("0. Cancel");
+        Integer choice = promptForInt("Which detail to change? ");
+        if (choice == null || choice == 0) return;
+        String username = existing.getUsername();
+        String email = existing.getEmail();
+        switch (choice) {
+            case 1 -> { username = getStringInput("Enter new username: "); if (username == null) return; }
+            case 2 -> { email = getStringInput("Enter new email: "); if (email == null) return; }
+            default -> { System.out.println("Invalid option."); return; }
         }
-
         boolean updated = userService.updateUser(id, username, email);
-
-        if (updated) {
-            System.out.println("\nUser ID " + id + " updated successfully!");
-        } else {
-            System.out.println("\nFailed to update user ID " + id + ".");
-        }
+        System.out.println(updated ? "\nUser updated successfully!" : "\nFailed to update user.");
     }
 
     public void promptDeleteUser() {
+        clearScreen();
         System.out.println("\n----- Delete User -----");
         Integer id = getIntInput("Enter user id: ");
         if (id == null) {
@@ -128,6 +138,7 @@ public class UserView {
     }
 
     public void promptArchiveUser() {
+        clearScreen();
         System.out.println("\n----- Archive User -----");
         Integer id = getIntInput("Enter user id: ");
         if (id == null) {
@@ -144,6 +155,7 @@ public class UserView {
     }
 
     public void promptRestoreUser() {
+        clearScreen();
         System.out.println("\n----- Restore User -----");
         List<User> users = userService.getAllArchivedUsers();
         printUsers(users, "Archived Users");
@@ -167,6 +179,7 @@ public class UserView {
     }
 
     public void promptSearchUsers() {
+        clearScreen();
         System.out.println("\n----- Search Users -----");
         String keyword = getStringInput("Enter keyword (search): ");
         if (keyword == null) {
@@ -178,6 +191,7 @@ public class UserView {
     }
 
     public void promptLoginUser() {
+        clearScreen();
         System.out.println("\n----- Login User -----");
         String username = getStringInput("Enter username: ");
         if (username == null) {
@@ -268,9 +282,9 @@ public class UserView {
         for (User user : users) {
             System.out.printf("%-4d| %-20s| %-28s| %-12s%n",
                     user.getId(),
-                    user.getUsername(),
-                    user.getEmail(),
-                    user.getRole());
+                    truncate(user.getUsername(), 20),
+                    truncate(user.getEmail(), 28),
+                    truncate(user.getRole(), 12));
         }
     }
 }

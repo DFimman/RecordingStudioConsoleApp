@@ -6,6 +6,8 @@ import com.joysistvi.recordingapp.service.AlbumService;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
+import static com.joysistvi.recordingapp.view.ConsoleOutput.clearScreen;
+import static com.joysistvi.recordingapp.view.ConsoleOutput.truncate;
 
 public class AlbumView {
 
@@ -20,6 +22,7 @@ public class AlbumView {
     // Album Management Menu
     public void handleMenu() {
         while (true) {
+            clearScreen();
             System.out.println("\n=== MANAGE ALBUMS ===");
             System.out.println("1. View All Albums");
             System.out.println("2. Create Album");
@@ -48,6 +51,7 @@ public class AlbumView {
                 }
                 default -> System.out.println("Invalid option. Please try again.");
             }
+            if (!ConsoleOutput.pause(scanner)) return;
         }
     }
 
@@ -56,11 +60,13 @@ public class AlbumView {
     }
 
     public void displayAllAlbums(boolean isArchived) {
+        clearScreen();
         List<Album> albums = isArchived ? albumService.getAllArchivedAlbums() : albumService.getAllActiveAlbums();
         printAlbums(albums, isArchived ? "Archived Albums" : "Albums");
     }
 
     public void promptCreateAlbum() {
+        clearScreen();
         System.out.println("\n----- Create New Album -----");
         String name = getStringInput("Enter album name: ");
         if (name == null) {
@@ -86,36 +92,41 @@ public class AlbumView {
     }
 
     public void promptUpdateAlbum() {
+        clearScreen();
         System.out.println("\n----- Update Album -----");
         Integer id = getIntInput("Enter album id: ");
-        if (id == null) {
-            return;
-        }
+        if (id == null) return;
 
-        String name = getStringInput("Enter new album name: ");
-        if (name == null) {
+        Album existing = albumService.findById(id);
+        if (existing == null) {
+            System.out.println("\nNo active album found with ID " + id + ".");
             return;
         }
-
-        Integer year = getIntInput("Enter new release year: ");
-        if (year == null) {
-            return;
+        System.out.println("Current: " + existing.getName() + " | " + existing.getYear() +
+                " | Artist " + existing.getArtistId());
+        System.out.println("1. Name");
+        System.out.println("2. Release Year");
+        System.out.println("3. Artist ID");
+        System.out.println("0. Cancel");
+        Integer choice = promptForInt("Which detail to change? ");
+        if (choice == null || choice == 0) return;
+        String name = existing.getName();
+        int year = existing.getYear();
+        int artistId = existing.getArtistId();
+        switch (choice) {
+            case 1 -> { name = getStringInput("Enter new album name: "); if (name == null) return; }
+            case 2 -> { Integer value = getIntInput("Enter new release year: ");
+                        if (value == null) return; year = value; }
+            case 3 -> { Integer value = getIntInput("Enter new artist ID: ");
+                        if (value == null) return; artistId = value; }
+            default -> { System.out.println("Invalid option."); return; }
         }
-        Integer artistId = getIntInput("Enter new artist id: ");
-        if (artistId == null) {
-            return;
-        }
-
         boolean updated = albumService.updateAlbum(id, name, year, artistId);
-
-        if (updated) {
-            System.out.println("\nAlbum ID " + id + " updated successfully!");
-        } else {
-            System.out.println("\nFailed to update album ID " + id + ".");
-        }
+        System.out.println(updated ? "\nAlbum updated successfully!" : "\nFailed to update album.");
     }
 
     public void promptDeleteAlbum() {
+        clearScreen();
         System.out.println("\n----- Delete Album -----");
         Integer id = getIntInput("Enter album id: ");
         if (id == null) {
@@ -132,6 +143,7 @@ public class AlbumView {
     }
 
     public void promptArchiveAlbum() {
+        clearScreen();
         System.out.println("\n----- Archive Album -----");
         Integer id = getIntInput("Enter album id: ");
         if (id == null) {
@@ -148,6 +160,7 @@ public class AlbumView {
     }
 
     public void promptRestoreAlbum() {
+        clearScreen();
         System.out.println("\n----- Restore Album -----");
         List<Album> archivedAlbums = albumService.getAllArchivedAlbums();
         printAlbums(archivedAlbums, "Archived Albums");
@@ -171,6 +184,7 @@ public class AlbumView {
     }
 
     public void promptSearchAlbums() {
+        clearScreen();
         System.out.println("\n----- Search Albums -----");
         String keyword = getStringInput("Enter keyword (search): ");
         if (keyword == null) {
@@ -252,9 +266,9 @@ public class AlbumView {
         for (Album album : albums) {
             System.out.printf("%-4d| %-22s| %-8d| %-20s%n",
                     album.getId(),
-                    album.getName(),
+                    truncate(album.getName(), 22),
                     album.getYear(),
-                    album.getArtistName());
+                    truncate(album.getArtistName(), 20));
         }
     }
 }

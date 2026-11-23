@@ -2,6 +2,7 @@ package com.joysistvi.recordingapp.repository;
 
 import com.joysistvi.recordingapp.config.DbConnection;
 import com.joysistvi.recordingapp.model.Playlist;
+import com.joysistvi.recordingapp.model.Song;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -207,5 +208,182 @@ public class PlaylistRepositoryImpl implements PlaylistRepository {
         }
 
         return playlists;
+    }
+    // Read a user's active or archived playlists
+    @Override
+    public List<Playlist> findAllForUser(int userId, boolean archived) {
+        List<Playlist> playlists = new ArrayList<>();
+        String query = "SELECT p.id, p.name, p.user_id, u.username, p.date_created, p.is_archived " +
+                "FROM playlists p JOIN users u ON p.user_id = u.id " +
+                "WHERE p.user_id = ? AND p.is_archived = ? ORDER BY p.id ASC";
+
+        try (Connection connection = dbConnection.connect();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, userId);
+            statement.setBoolean(2, archived);
+            try (ResultSet rs = statement.executeQuery()) {
+                while (rs.next()) playlists.add(readPlaylist(rs));
+            }
+        } catch (SQLException e) {
+            System.out.println("\nRead User Playlists Error: " + e.getMessage());
+        }
+        return playlists;
+    }
+
+    @Override
+    public Playlist findActiveByIdForUser(int playlistId, int userId) {
+        String query = "SELECT p.id, p.name, p.user_id, u.username, p.date_created, p.is_archived " +
+                "FROM playlists p JOIN users u ON p.user_id = u.id " +
+                "WHERE p.id = ? AND p.user_id = ? AND p.is_archived = 0";
+        try (Connection connection = dbConnection.connect();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, playlistId);
+            statement.setInt(2, userId);
+            try (ResultSet rs = statement.executeQuery()) {
+                if (rs.next()) return readPlaylist(rs);
+            }
+        } catch (SQLException e) {
+            System.out.println("\nFind Playlist Error: " + e.getMessage());
+        }
+        return null;
+    }
+
+    private Playlist readPlaylist(ResultSet rs) throws SQLException {
+        return new Playlist(rs.getInt("id"), rs.getString("name"), rs.getInt("user_id"),
+                rs.getString("username"), rs.getTimestamp("date_created"), rs.getBoolean("is_archived"));
+    }
+
+    @Override
+    public boolean updateNameForUser(int playlistId, String name, int userId) {
+        String query = "UPDATE playlists SET name = ? WHERE id = ? AND user_id = ? AND is_archived = 0";
+        try (Connection connection = dbConnection.connect();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, name);
+            statement.setInt(2, playlistId);
+            statement.setInt(3, userId);
+            return statement.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.out.println("\nUpdate Owned Playlist Error: " + e.getMessage());
+            return false;
+        }
+    }
+
+    @Override
+    public boolean deleteForUser(int playlistId, int userId) {
+        String query = "DELETE FROM playlists WHERE id = ? AND user_id = ?";
+        try (Connection connection = dbConnection.connect();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, playlistId);
+            statement.setInt(2, userId);
+            return statement.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.out.println("\nDelete Owned Playlist Error (remove its songs first): " + e.getMessage());
+            return false;
+        }
+    }
+
+    @Override
+    public boolean archiveForUser(int playlistId, int userId) {
+        String query = "UPDATE playlists SET is_archived = 1 WHERE id = ? AND user_id = ? AND is_archived = 0";
+        try (Connection connection = dbConnection.connect();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, playlistId);
+            statement.setInt(2, userId);
+            return statement.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.out.println("\nArchive Owned Playlist Error: " + e.getMessage());
+            return false;
+        }
+    }
+
+    @Override
+    public boolean restoreForUser(int playlistId, int userId) {
+        String query = "UPDATE playlists SET is_archived = 0 WHERE id = ? AND user_id = ? AND is_archived = 1";
+        try (Connection connection = dbConnection.connect();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, playlistId);
+            statement.setInt(2, userId);
+            return statement.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.out.println("\nRestore Owned Playlist Error: " + e.getMessage());
+            return false;
+        }
+    }
+
+    @Override
+    public List<Playlist> searchByNameForUser(String keyword, int userId) {
+        List<Playlist> playlists = new ArrayList<>();
+        String query = "SELECT p.id, p.name, p.user_id, u.username, p.date_created, p.is_archived " +
+                "FROM playlists p JOIN users u ON p.user_id = u.id " +
+                "WHERE p.is_archived = 0 AND p.user_id = ? AND p.name LIKE ? ORDER BY p.id ASC";
+        try (Connection connection = dbConnection.connect();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, userId);
+            statement.setString(2, "%" + keyword + "%");
+            try (ResultSet rs = statement.executeQuery()) {
+                while (rs.next()) playlists.add(readPlaylist(rs));
+            }
+        } catch (SQLException e) {
+            System.out.println("\nSearch Owned Playlists Error: " + e.getMessage());
+        }
+        return playlists;
+    }
+
+    @Override
+    public List<Song> findSongsInPlaylist(int playlistId, int userId) {
+        List<Song> songs = new ArrayList<>();
+        String query = "SELECT s.id, s.title, s.genre, s.length, s.album_id, a.name AS album_name " +
+                "FROM playlist_songs ps JOIN playlists p ON ps.playlist_id = p.id " +
+                "JOIN songs s ON ps.song_id = s.id JOIN albums a ON s.album_id = a.id " +
+                "WHERE ps.playlist_id = ? AND p.user_id = ? AND p.is_archived = 0 AND s.is_archived = 0 " +
+                "ORDER BY s.id ASC";
+        try (Connection connection = dbConnection.connect();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, playlistId);
+            statement.setInt(2, userId);
+            try (ResultSet rs = statement.executeQuery()) {
+                while (rs.next()) songs.add(new Song(rs.getInt("id"), rs.getString("title"),
+                        rs.getString("genre"), rs.getString("length"),
+                        rs.getInt("album_id"), rs.getString("album_name")));
+            }
+        } catch (SQLException e) {
+            System.out.println("\nRead Playlist Songs Error: " + e.getMessage());
+        }
+        return songs;
+    }
+
+    @Override
+    public boolean addSongToPlaylist(int playlistId, int songId, int userId) {
+        String query = "INSERT INTO playlist_songs (playlist_id, song_id) " +
+                "SELECT p.id, s.id FROM playlists p JOIN songs s ON s.id = ? " +
+                "WHERE p.id = ? AND p.user_id = ? AND p.is_archived = 0 AND s.is_archived = 0 " +
+                "AND NOT EXISTS (SELECT 1 FROM playlist_songs ps WHERE ps.playlist_id = p.id AND ps.song_id = s.id)";
+        try (Connection connection = dbConnection.connect();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, songId);
+            statement.setInt(2, playlistId);
+            statement.setInt(3, userId);
+            return statement.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.out.println("\nAdd Song to Playlist Error: " + e.getMessage());
+            return false;
+        }
+    }
+
+    @Override
+    public boolean removeSongFromPlaylist(int playlistId, int songId, int userId) {
+        String query = "DELETE FROM playlist_songs WHERE playlist_id = ? AND song_id = ? " +
+                "AND EXISTS (SELECT 1 FROM playlists p WHERE p.id = ? AND p.user_id = ? AND p.is_archived = 0)";
+        try (Connection connection = dbConnection.connect();
+             PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, playlistId);
+            statement.setInt(2, songId);
+            statement.setInt(3, playlistId);
+            statement.setInt(4, userId);
+            return statement.executeUpdate() > 0;
+        } catch (SQLException e) {
+            System.out.println("\nRemove Song from Playlist Error: " + e.getMessage());
+            return false;
+        }
     }
 }
