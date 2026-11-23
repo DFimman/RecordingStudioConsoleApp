@@ -1,6 +1,7 @@
 package com.joysistvi.recordingapp;
 
 import com.joysistvi.recordingapp.config.DbConnection;
+import com.joysistvi.recordingapp.model.User;
 import com.joysistvi.recordingapp.repository.ArtistRepository;
 import com.joysistvi.recordingapp.repository.ArtistRepositoryImpl;
 import com.joysistvi.recordingapp.repository.AlbumRepository;
@@ -89,6 +90,9 @@ public class App {
 
         App app = new App(scanner, userService, songView, artistView, albumView, userView, playlistView);
         app.run();
+
+        // prevent error after closing the app
+        scanner.close();
     }
 
     public void run() {
@@ -99,7 +103,12 @@ public class App {
                 return;
             }
 
-            dashboard();
+            if (currentUser.role == "ADMIN"){
+                adminDashboard();
+            } else if (currentUser.role == "USER"){
+                userDashboard(currentUser);
+            }
+
             currentUser = null;
             System.out.println("\nLogged out successfully!");
         }
@@ -150,7 +159,7 @@ public class App {
     }
 
     // Main Dashboard
-    private void dashboard() {
+    private void adminDashboard() {
         while (true) {
             System.out.println("\n1. Song Management");
             System.out.println("2. Artist Management");
@@ -184,6 +193,51 @@ public class App {
         }
     }
 
+    private void userDashboard(User currentUser){
+        while (true) {
+            System.out.println("\n=== USER DASHBOARD ===");
+            System.out.println("1. Browse Artists, Albums, Songs");
+            System.out.println("2. Search Songs");
+            System.out.println("3. Manage Playlist");
+            System.out.println("4. Add / Remove Songs in Playlist");
+            System.out.println("0. Logout");
+
+            Integer choice = promptForInt("Choice: ");
+
+            switch (choice){
+                case 1 -> browseCatalog();
+                case 2 -> songView.promptSearchSongs();
+                case 3 -> playlistView.handleMenu(currentUser.getID());
+                case 4 -> playlistView.handleManageSongsInPlaylist(currentUser.getID());
+                case 0 -> {return;}
+                case null -> {
+                    System.out.println("Enter again.");
+                }
+                default -> throw new IllegalStateException("Unexpected value: " + choice);
+
+            }
+        }
+    }
+    private  void browseCatalog() {
+        System.out.println("\n=== BROWSE CATALOG ===");
+        System.out.println("1. View Artists");
+        System.out.println("2. View Albums");
+        System.out.println("3. Viw Songs");
+        System.out.println("0. Back");
+
+        Integer choice = promptForInt("Choice: ");
+
+        switch (choice) {
+            case 1 -> artistView.displayAllArtist();
+            case 2 -> albumView.displayAllAlbums();
+            case 3 -> songView.displayAllSongs();
+            case 0 -> {return;}
+            case null -> {
+                System.out.println("Enter again.");
+            }
+            default -> throw new IllegalStateException("Unexpected value: " + choice);
+        }
+    }
     // Get console input
     private String getStringInput(String prompt) {
         System.out.print(prompt);
